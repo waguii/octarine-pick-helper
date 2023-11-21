@@ -5,7 +5,7 @@ import {
 	ImageData,
 	Input,
 	Menu,
-	Player,
+	PlayerCustomData,
 	RendererSDK,
 	Team,
 	Vector2
@@ -20,7 +20,7 @@ export class PlayerGUI {
 	private readonly mouseOnPanel = new Vector2()
 	private readonly path = "github.com/octarine-public/net-worth/scripts_files"
 
-	public Draw(menu: MenuManager, position: Vector2, player: Player) {
+	public Draw(menu: MenuManager, position: Vector2, player: PlayerCustomData) {
 		const textSize = menu.Size
 		const lineSize = menu.LineSize
 		const playerSize = menu.PlayerSize
@@ -105,7 +105,7 @@ export class PlayerGUI {
 	}
 
 	protected Text(
-		player: Player,
+		player: PlayerCustomData,
 		position: Vector2,
 		lineSize: Vector2,
 		playerSize: Vector2,
@@ -118,7 +118,7 @@ export class PlayerGUI {
 		RendererSDK.Text(text, pos, Color.White, RendererSDK.DefaultFontName, textSize)
 	}
 
-	protected Icon(player: Player, position: Vector2, size: Vector2) {
+	protected Icon(player: PlayerCustomData, position: Vector2, size: Vector2) {
 		const cursorOnScreen = Input.CursorOnScreen
 		this.isUnderRectangle = cursorOnScreen.IsUnderRectangle(
 			position.x,
@@ -130,7 +130,7 @@ export class PlayerGUI {
 		RendererSDK.FilledRect(
 			position.Clone().SubtractScalarX(3),
 			new Vector2(3, size.y),
-			player.PlayerColor.SetA(180)
+			player.Color.SetA(180)
 		)
 	}
 
@@ -150,7 +150,7 @@ export class PlayerGUI {
 		)
 	}
 
-	private serializePlayerName(player: Player) {
+	private serializePlayerName(player: PlayerCustomData) {
 		const name = player.PlayerName ?? player.NetWorth.toString()
 		return name.length > 8 ? name.slice(0, 7) + "…" : name
 	}

@@ -4,14 +4,13 @@ import {
 	ArrayExtensions,
 	DOTAGameState,
 	DOTAGameUIState,
-	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
 	GUIInfo,
 	Input,
 	InputEventSDK,
-	Player,
+	PlayerCustomData,
 	Rectangle,
 	Team,
 	VMouseKeys
@@ -23,7 +22,7 @@ import { MenuManager } from "./menu"
 
 const bootstrap = new (class CBootstrap {
 	private readonly menu = new MenuManager()
-	private readonly players = new Set<Player>()
+	private readonly players = new Set<PlayerCustomData>()
 
 	private readonly teamGUI = new TeamGUI()
 	private readonly playerGUI = new PlayerGUI()
@@ -34,6 +33,10 @@ const bootstrap = new (class CBootstrap {
 
 	private get isPostGame() {
 		return this.gameState === DOTAGameState.DOTA_GAMERULES_STATE_POST_GAME
+	}
+
+	private get isDisconnect() {
+		return this.gameState === DOTAGameState.DOTA_GAMERULES_STATE_DISCONNECT
 	}
 
 	private get isInGame() {
@@ -58,7 +61,7 @@ const bootstrap = new (class CBootstrap {
 		if (!this.menu.State.value) {
 			return false
 		}
-		if (!this.isInGame || this.isPostGame) {
+		if (!this.isInGame || this.isPostGame || this.isDisconnect) {
 			return false
 		}
 		return GameState.UIState === DOTAGameUIState.DOTA_GAME_UI_DOTA_INGAME
@@ -76,7 +79,6 @@ const bootstrap = new (class CBootstrap {
 		let dire = 0
 		let radiant = 0
 		const position = this.menu.GetPanelPos
-
 		this.playerGUI.CopyTouch(this.menu, position, Input.CursorOnScreen)
 
 		const orderByPlayers = ArrayExtensions.orderBy(
@@ -85,9 +87,6 @@ const bootstrap = new (class CBootstrap {
 		)
 
 		for (const player of orderByPlayers) {
-			if (this.shouldDraw) {
-				this.playerGUI.Draw(this.menu, position, player)
-			}
 			switch (player.Team) {
 				case Team.Dire:
 					dire += player.NetWorth
@@ -95,6 +94,12 @@ const bootstrap = new (class CBootstrap {
 				case Team.Radiant:
 					radiant += player.NetWorth
 					break
+			}
+			if (player.IsAbandoned || player.IsDisconnected) {
+				continue
+			}
+			if (this.shouldDraw) {
+				this.playerGUI.Draw(this.menu, position, player)
 			}
 		}
 
@@ -104,26 +109,14 @@ const bootstrap = new (class CBootstrap {
 		}
 	}
 
-	public EntityChanged(entity: Entity, destroyed = false) {
-		if (!(entity instanceof Player) || entity.IsSpectator) {
+	public PlayerCustomDataUpdated(entity: PlayerCustomData) {
+		if (!entity.IsValid || entity.IsSpectator) {
+			this.players.delete(entity)
 			return
 		}
-		if (!destroyed) {
+		if (!this.players.has(entity)) {
 			this.players.add(entity)
-			return
 		}
-		this.players.delete(entity)
-	}
-
-	public EntityTeamChanged(entity: Entity) {
-		if (!(entity instanceof Player) || entity.IsSpectator) {
-			return
-		}
-		if (entity.IsValid) {
-			this.players.add(entity)
-			return
-		}
-		this.players.delete(entity)
 	}
 
 	public MouseKeyUp(key: VMouseKeys) {
@@ -193,8 +186,6 @@ InputEventSDK.on("MouseKeyUp", key => bootstrap.MouseKeyUp(key))
 
 InputEventSDK.on("MouseKeyDown", key => bootstrap.MouseKeyDown(key))
 
-EventsSDK.on("EntityCreated", entity => bootstrap.EntityChanged(entity))
-
-EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityChanged(entity, true))
-
-EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
+EventsSDK.on("PlayerCustomDataUpdated", player =>
+	bootstrap.PlayerCustomDataUpdated(player)
+)
