@@ -22,7 +22,7 @@ import { MenuManager } from "./menu"
 
 const bootstrap = new (class CBootstrap {
 	private readonly menu = new MenuManager()
-	private readonly players = new Set<PlayerCustomData>()
+	private readonly players: PlayerCustomData[] = []
 
 	private readonly teamGUI = new TeamGUI()
 	private readonly playerGUI = new PlayerGUI()
@@ -79,14 +79,12 @@ const bootstrap = new (class CBootstrap {
 		let dire = 0
 		let radiant = 0
 		const position = this.menu.GetPanelPos
+		const orderByPlayers = ArrayExtensions.orderBy(this.players, x => x.NetWorth)
+
 		this.playerGUI.CopyTouch(this.menu, position, Input.CursorOnScreen)
 
-		const orderByPlayers = ArrayExtensions.orderBy(
-			Array.from(this.players),
-			x => -x.NetWorth
-		)
-
-		for (const player of orderByPlayers) {
+		for (let index = orderByPlayers.length - 1; index > -1; index--) {
+			const player = orderByPlayers[index]
 			switch (player.Team) {
 				case Team.Dire:
 					dire += player.NetWorth
@@ -111,11 +109,11 @@ const bootstrap = new (class CBootstrap {
 
 	public PlayerCustomDataUpdated(entity: PlayerCustomData) {
 		if (!entity.IsValid || entity.IsSpectator) {
-			this.players.delete(entity)
+			ArrayExtensions.arrayRemove(this.players, entity)
 			return
 		}
-		if (!this.players.has(entity)) {
-			this.players.add(entity)
+		if (this.players.every(x => x.PlayerID !== entity.PlayerID)) {
+			this.players.push(entity)
 		}
 	}
 
