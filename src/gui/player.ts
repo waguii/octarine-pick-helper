@@ -126,7 +126,12 @@ export class PlayerGUI {
 			size.x,
 			size.y
 		)
-		RendererSDK.Image(ImageData.GetHero(player.HeroName ?? ""), position, -1, size)
+		RendererSDK.Image(
+			ImageData.GetHeroTexture(player.HeroName ?? ""),
+			position,
+			-1,
+			size
+		)
 		RendererSDK.FilledRect(
 			position.Clone().SubtractScalarX(3),
 			new Vector2(3, size.y),
