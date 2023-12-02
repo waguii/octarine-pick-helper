@@ -1,7 +1,6 @@
 import "./translate"
 
 import {
-	ArrayExtensions,
 	DOTAGameState,
 	DOTAGameUIState,
 	EventsSDK,
@@ -10,22 +9,35 @@ import {
 	GUIInfo,
 	Input,
 	InputEventSDK,
+	NotificationsSDK,
 	PlayerCustomData,
 	Rectangle,
+	ResetSettingsUpdated,
+	Sleeper,
 	Team,
 	VMouseKeys
 } from "github.com/octarine-public/wrapper/index"
 
+import { KeyMode } from "./enums/KeyMode"
 import { PlayerGUI } from "./gui/player"
 import { TeamGUI } from "./gui/team"
 import { MenuManager } from "./menu"
 
 const bootstrap = new (class CBootstrap {
 	private readonly menu = new MenuManager()
+	private readonly sleeper = new Sleeper()
+	private readonly playerGUI: PlayerGUI
+	private readonly teamGUI = new TeamGUI()
 	private readonly players: PlayerCustomData[] = []
 
-	private readonly teamGUI = new TeamGUI()
-	private readonly playerGUI = new PlayerGUI()
+	constructor() {
+		this.playerGUI = new PlayerGUI(this.menu)
+		this.menu.Reset.OnValue(() => this.resetSettings())
+	}
+
+	private get state() {
+		return this.menu.State.value
+	}
 
 	private get gameState() {
 		return GameRules?.GameState ?? DOTAGameState.DOTA_GAMERULES_STATE_INIT
@@ -57,34 +69,70 @@ const bootstrap = new (class CBootstrap {
 		return this.gameState === DOTAGameState.DOTA_GAMERULES_STATE_TEAM_SHOWCASE
 	}
 
-	private get shouldPass() {
-		if (!this.menu.State.value) {
+	private get isScoreboardPosition() {
+		if (!Input.IsScoreboardOpen) {
 			return false
 		}
-		if (!this.isInGame || this.isPostGame || this.isDisconnect) {
-			return false
-		}
-		return GameState.UIState === DOTAGameUIState.DOTA_GAME_UI_DOTA_INGAME
+		return this.shouldPosition(GUIInfo.Scoreboard.Background)
 	}
 
-	private get shouldDraw() {
-		return !this.isContainsScoreboardOpen() && !this.isContainsShopOpen()
+	private get isShopPosition() {
+		if (!Input.IsShopOpen) {
+			return false
+		}
+		return this.shouldPosition(
+			GUIInfo.OpenShopMini.Items,
+			GUIInfo.OpenShopMini.Header,
+			GUIInfo.OpenShopMini.GuideFlyout,
+			GUIInfo.OpenShopMini.ItemCombines,
+			GUIInfo.OpenShopMini.PinnedItems,
+			GUIInfo.OpenShopLarge.Items,
+			GUIInfo.OpenShopLarge.Header,
+			GUIInfo.OpenShopLarge.GuideFlyout,
+			GUIInfo.OpenShopLarge.PinnedItems,
+			GUIInfo.OpenShopLarge.ItemCombines
+		)
+	}
+
+	private get isToggleKeyMode() {
+		const menu = this.menu
+		const toggleKey = menu.ToggleKey
+		// if toggle key is not assigned (setting to "None")
+		if (toggleKey.assignedKey < 0) {
+			return false
+		}
+		const keyModeID = menu.ModeKey.SelectedID
+		return (
+			(keyModeID === KeyMode.Toggled && !menu.IsToggled) ||
+			(keyModeID === KeyMode.Pressed && !toggleKey.isPressed)
+		)
+	}
+
+	private get canDrawPlayerGUI() {
+		return !this.isShopPosition && !this.isScoreboardPosition && !this.isToggleKeyMode
 	}
 
 	public Draw() {
-		if (!this.shouldPass) {
+		if (!this.state || !this.isInGame || this.isPostGame || this.isDisconnect) {
+			return
+		}
+
+		if (GameState.UIState !== DOTAGameUIState.DOTA_GAME_UI_DOTA_INGAME) {
 			return
 		}
 
 		let dire = 0
 		let radiant = 0
-		const position = this.menu.GetPanelPos
-		const orderByPlayers = ArrayExtensions.orderBy(this.players, x => x.NetWorth)
+		const position = new Rectangle()
+		const enabledPlayers: number[] = []
+		const orderByPlayers = this.players.orderBy(x => x.NetWorth)
 
-		this.playerGUI.CopyTouch(this.menu, position, Input.CursorOnScreen)
+		this.playerGUI.UpdateSetPosition(position)
 
 		for (let index = orderByPlayers.length - 1; index > -1; index--) {
 			const player = orderByPlayers[index]
+
+			// for Team GUI
 			switch (player.Team) {
 				case Team.Dire:
 					dire += player.NetWorth
@@ -93,23 +141,31 @@ const bootstrap = new (class CBootstrap {
 					radiant += player.NetWorth
 					break
 			}
+
 			if (player.IsAbandoned || player.IsDisconnected) {
 				continue
 			}
-			if (this.shouldDraw) {
-				this.playerGUI.Draw(this.menu, position, player)
+
+			if (this.canDrawPlayerGUI) {
+				this.playerGUI.Draw(player, enabledPlayers, position)
 			}
 		}
 
+		this.playerGUI.CalculateBottomSize(enabledPlayers, position)
+		this.playerGUI.UpdatePositionAfter()
+
+		// Team GUI
 		const isObserver = GameState.LocalTeam === Team.Observer
-		if (!this.isShowCase && !this.isStrategyTime && !isObserver) {
-			this.teamGUI.Draw(this.menu.Total, radiant, dire)
+		if (this.isShowCase || this.isStrategyTime || isObserver) {
+			return
 		}
+
+		this.teamGUI.Draw(this.menu.Total, radiant, dire)
 	}
 
 	public PlayerCustomDataUpdated(entity: PlayerCustomData) {
 		if (!entity.IsValid || entity.IsSpectator) {
-			ArrayExtensions.arrayRemove(this.players, entity)
+			this.players.remove(entity)
 			return
 		}
 		if (this.players.every(x => x.PlayerID !== entity.PlayerID)) {
@@ -118,17 +174,17 @@ const bootstrap = new (class CBootstrap {
 	}
 
 	public MouseKeyUp(key: VMouseKeys) {
-		if (!this.isValidInput(key)) {
+		if (!this.shouldInput(key)) {
 			return true
 		}
-		return this.playerGUI.MouseKeyUp(this.menu)
+		return this.playerGUI.MouseKeyUp()
 	}
 
 	public MouseKeyDown(key: VMouseKeys) {
-		if (!this.isValidInput(key)) {
+		if (!this.shouldInput(key)) {
 			return true
 		}
-		return this.playerGUI.MouseKeyDown(this.menu)
+		return this.playerGUI.MouseKeyDown()
 	}
 
 	public GameChanged() {
@@ -136,41 +192,32 @@ const bootstrap = new (class CBootstrap {
 		this.playerGUI.GameChanged()
 	}
 
-	private isValidInput(key: VMouseKeys) {
-		return this.shouldPass && key === VMouseKeys.MK_LBUTTON
+	private shouldInput(key: VMouseKeys) {
+		if (!this.state || this.isPostGame || key !== VMouseKeys.MK_LBUTTON) {
+			return false
+		}
+		if (GameState.UIState !== DOTAGameUIState.DOTA_GAME_UI_DOTA_INGAME) {
+			return false
+		}
+		return true
 	}
 
-	private shoudlDrawPanelPosition(...positions: Rectangle[]) {
+	private shouldPosition(...positions: Rectangle[]) {
 		return positions.some(position => this.isContainsPanel(position))
 	}
 
 	private isContainsPanel(position: Rectangle) {
-		return position.Contains(this.menu.GetPanelPos)
+		return position.Contains(this.playerGUI.TotalPosition.pos1)
 	}
 
-	private isContainsShopOpen() {
-		return (
-			Input.IsShopOpen &&
-			this.shoudlDrawPanelPosition(
-				GUIInfo.OpenShopMini.Items,
-				GUIInfo.OpenShopMini.Header,
-				GUIInfo.OpenShopMini.GuideFlyout,
-				GUIInfo.OpenShopMini.ItemCombines,
-				GUIInfo.OpenShopMini.PinnedItems,
-				GUIInfo.OpenShopLarge.Items,
-				GUIInfo.OpenShopLarge.Header,
-				GUIInfo.OpenShopLarge.GuideFlyout,
-				GUIInfo.OpenShopLarge.PinnedItems,
-				GUIInfo.OpenShopLarge.ItemCombines
-			)
-		)
-	}
-
-	private isContainsScoreboardOpen() {
-		return (
-			Input.IsScoreboardOpen &&
-			this.shoudlDrawPanelPosition(GUIInfo.Scoreboard.Background)
-		)
+	private resetSettings() {
+		if (this.sleeper.Sleeping("ResetSettings")) {
+			return
+		}
+		this.menu.ResetSettings()
+		this.playerGUI.ResetSettings()
+		this.sleeper.Sleep(1000, "ResetSettings")
+		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
 })()
 

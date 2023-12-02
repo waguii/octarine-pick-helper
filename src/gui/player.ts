@@ -6,152 +6,228 @@ import {
 	Input,
 	Menu,
 	PlayerCustomData,
+	Rectangle,
 	RendererSDK,
 	Team,
+	TextFlags,
 	Vector2
 } from "github.com/octarine-public/wrapper/index"
 
 import { MenuManager } from "../menu"
 
 export class PlayerGUI {
-	private dirtyPosition = false
+	public readonly TotalPosition = new Rectangle()
+
+	private dragging = false
 	private isUnderRectangle = false
-	private readonly Position = new Vector2()
-	private readonly mouseOnPanel = new Vector2()
 	private readonly path = "github.com/octarine-public/net-worth/scripts_files"
 
-	public Draw(menu: MenuManager, position: Vector2, player: PlayerCustomData) {
-		const textSize = menu.Size
-		const lineSize = menu.LineSize
-		const playerSize = menu.PlayerSize
+	private readonly draggingOffset = new Vector2()
+	private readonly scaleGradientSize = new Vector2()
+	private readonly scalePositionPanel = new Vector2()
+	private readonly scaleUnitImageSize = new Vector2()
 
+	constructor(private readonly menu: MenuManager) {
+		this.menu.Size.OnValue(() => this.updateScaleSize())
+		this.menu.Position.X.OnValue(() => this.updateScalePosition())
+		this.menu.Position.Y.OnValue(() => this.updateScalePosition())
+	}
+
+	public UpdateSetPosition(position: Rectangle) {
+		const positionPanel = this.scalePositionPanel
+		const unitImageSize = this.scaleUnitImageSize
+
+		position.x = positionPanel.x
+		position.y = positionPanel.y
+		position.Width = unitImageSize.x
+		position.Height = unitImageSize.y
+
+		this.TotalPosition.pos1.CopyFrom(position.pos1)
+		this.TotalPosition.pos2.CopyFrom(position.pos2)
+	}
+
+	public Draw(player: PlayerCustomData, enabledPlayers: number[], position: Rectangle) {
+		const gap = 2
+		const menu = this.menu
 		const ally = menu.Ally.value
 		const enemy = menu.Enemy.value
-		const hideLocal = !menu.Local.value
 
-		if (
-			(player.IsEnemy() && !enemy) ||
-			(!player.IsEnemy() && !ally) ||
-			(player.IsLocalPlayer && hideLocal)
-		) {
+		const dragging = this.dragging
+		const isEnemy = player.IsEnemy()
+
+		const hideLocal = !menu.Local.value && player.IsLocalPlayer
+		if ((isEnemy && !enemy) || (!isEnemy && !ally) || hideLocal) {
 			return
 		}
 
-		this.Gradient(position, lineSize, player.IsEnemy(), player.Team)
-		this.Icon(player, position, playerSize)
-		this.Text(player, position, lineSize, playerSize, textSize)
-		position.AddForThis(new Vector2(0, playerSize.y + 2))
+		// player image
+		let count = 0
+		const heroName = player.HeroName ?? ""
+		const texturePath = ImageData.GetHeroTexture(heroName)
+
+		const imageRect = position.Clone()
+		this.FieldRect(imageRect, Color.Black, dragging)
+		imageRect.x += gap / 2
+		imageRect.y += gap / 2
+		imageRect.Width -= gap
+		imageRect.Height -= gap
+		this.Image(texturePath, imageRect, Color.White, dragging)
+
+		// player image border left
+		const leftBorder = imageRect.Clone()
+		leftBorder.Width = GUIInfo.ScaleWidth(gap)
+		this.FieldRect(leftBorder, player.Color, dragging)
+
+		// player gradient border right
+		const gPosition = position.Clone()
+		gPosition.x += position.Width
+		gPosition.Width = this.scaleGradientSize.x
+		gPosition.Height = this.scaleGradientSize.y
+		this.Gradient(gPosition, isEnemy, player.Team, dragging)
+
+		this.isUnderRectangle =
+			position.Contains(Input.CursorOnScreen) ||
+			gPosition.Contains(Input.CursorOnScreen) ||
+			gPosition.Contains(Input.CursorOnScreen)
+
+		this.Text(gPosition, player) // NOTE: not cloned gPosition
+
+		count++
+		enabledPlayers.push(count)
+		position.AddY(position.Height + gap / 2)
+		this.TotalPosition.Height += position.Height
 	}
 
-	public MouseKeyUp(menu: MenuManager) {
-		if (!this.dirtyPosition) {
+	public UpdatePositionAfter() {
+		const position = this.scalePositionPanel
+		if (!this.dragging) {
+			// NOTE: update full panel if added new unit's or items
+			this.updateMinMaxPanelPosition(position)
+			return
+		}
+		this.BackgroundDrag()
+		const wSize = RendererSDK.WindowSize
+		const mousePos = Input.CursorOnScreen
+		const toPosition = mousePos
+			.SubtractForThis(this.draggingOffset)
+			.Min(wSize.Subtract(this.TotalPosition.Size))
+			.Max(0)
+			.CopyTo(position)
+		this.saveNewPosition(toPosition)
+	}
+
+	public MouseKeyUp() {
+		if (!this.dragging) {
 			return true
 		}
-
+		this.dragging = false
 		Menu.Base.SaveConfigASAP = true
-		this.dirtyPosition = false
-
-		menu.SettingsPosition.Vector = menu.GetPanelPos.Clone()
-			.DivideScalarX(GUIInfo.GetWidthScale())
-			.DivideScalarY(GUIInfo.GetHeightScale())
-			.RoundForThis(1)
-
 		return true
 	}
 
-	public MouseKeyDown(menu: MenuManager) {
-		if (this.dirtyPosition) {
+	public MouseKeyDown() {
+		if (this.dragging) {
 			return true
 		}
-
-		const Size = menu.PlayerSize
-		const position = menu.GetPanelPos
-		const isHoverPanel = Input.CursorOnScreen.IsUnderRectangle(
-			position.x,
-			position.y,
-			Size.x,
-			Size.y
-		)
-
-		if (!isHoverPanel) {
+		const mouse = Input.CursorOnScreen
+		const recPos = this.TotalPosition
+		if (!mouse.IsUnderRectangle(recPos.x, recPos.y, recPos.Width, recPos.Height)) {
 			return true
 		}
-
-		this.dirtyPosition = true
-		this.mouseOnPanel.CopyFrom(Input.CursorOnScreen.Subtract(this.Position))
+		this.dragging = true
+		mouse.Subtract(recPos.pos1).CopyTo(this.draggingOffset)
 		return false
 	}
 
-	public CopyTouch(menu: MenuManager, position: Vector2, mousePos: Vector2) {
-		this.Position.CopyFrom(position)
-
-		if (!this.dirtyPosition) {
-			return
-		}
-
-		position.CopyFrom(mousePos.Subtract(this.mouseOnPanel))
-		menu.SettingsPosition.Vector = position
-			.Clone()
-			.DivideScalarX(GUIInfo.GetWidthScale())
-			.DivideScalarY(GUIInfo.GetHeightScale())
-			.RoundForThis(1)
+	public CalculateBottomSize(enabledPlayers: number[], position: Rectangle) {
+		this.TotalPosition.Width += this.scaleGradientSize.x
+		this.TotalPosition.Height -= position.Height - enabledPlayers.length
 	}
 
 	public GameChanged() {
-		this.Position.toZero()
-		this.mouseOnPanel.toZero()
-		this.dirtyPosition = false
+		this.dragging = false
 		this.isUnderRectangle = false
+		this.draggingOffset.toZero()
 	}
 
-	protected Text(
-		player: PlayerCustomData,
-		position: Vector2,
-		lineSize: Vector2,
-		playerSize: Vector2,
-		textSize: number
-	) {
-		const pos = position.Add(new Vector2(playerSize.x + 5, lineSize.y - textSize - 2))
+	public ResetSettings() {
+		this.updateScaleSize()
+		this.updateScalePosition()
+		this.saveNewPosition()
+	}
+
+	protected Text(position: Rectangle, player: PlayerCustomData) {
+		// NOTE: since it is the last element, position.Clone() is ignored for optimization
 		const text = this.isUnderRectangle
 			? this.serializePlayerName(player)
 			: this.serializeNetWorth(player.NetWorth)
-		RendererSDK.Text(text, pos, Color.White, RendererSDK.DefaultFontName, textSize)
+		position.x += position.Height / 6
+		const flags = TextFlags.Center | TextFlags.Left
+		RendererSDK.TextByFlags(text, position, Color.White, 1.6, flags, 400)
 	}
 
-	protected Icon(player: PlayerCustomData, position: Vector2, size: Vector2) {
-		const cursorOnScreen = Input.CursorOnScreen
-		this.isUnderRectangle = cursorOnScreen.IsUnderRectangle(
-			position.x,
-			position.y,
-			size.x,
-			size.y
-		)
+	protected Image(
+		path: string,
+		position: Rectangle,
+		color = Color.White,
+		grayscale?: boolean,
+		round: number = -1
+	) {
 		RendererSDK.Image(
-			ImageData.GetHeroTexture(player.HeroName ?? ""),
-			position,
-			-1,
-			size
+			path,
+			position.pos1,
+			round,
+			position.Size,
+			color,
+			undefined,
+			undefined,
+			grayscale
 		)
+	}
+
+	protected FieldRect(position: Rectangle, color = Color.White, grayscale?: boolean) {
 		RendererSDK.FilledRect(
-			position.Clone().SubtractScalarX(3),
-			new Vector2(3, size.y),
-			player.Color.SetA(180)
+			position.pos1,
+			position.Size,
+			color,
+			undefined,
+			undefined,
+			grayscale
 		)
 	}
 
-	protected Gradient(position: Vector2, size: Vector2, isEnemy = false, team: Team) {
-		let color: Color
-		if (GameState.LocalTeam === Team.Observer) {
-			color = team === Team.Dire ? Color.Red.SetA(200) : Color.Green.SetA(200)
-		} else {
-			color = isEnemy ? Color.Red.SetA(200) : Color.Green.SetA(200)
-		}
-		RendererSDK.Image(
+	protected Gradient(
+		position: Rectangle,
+		isEnemy = false,
+		team: Team,
+		grayscale?: boolean
+	) {
+		const localTeam = GameState.LocalTeam
+		const gradientColor =
+			localTeam === Team.Observer
+				? team === Team.Dire
+					? Color.Red.SetA(200)
+					: Color.Green.SetA(200)
+				: isEnemy
+				? Color.Red.SetA(200)
+				: Color.Green.SetA(200)
+		this.Image(
 			`${this.path}/networth_gradient.svg`,
 			position,
-			-1,
-			size.Clone().MultiplyScalarX(0.85),
-			color
+			gradientColor,
+			grayscale
+		)
+	}
+
+	protected BackgroundDrag() {
+		const position = this.TotalPosition
+		const division = position.Height / 10 - this.menu.Size.value / 3
+		RendererSDK.FilledRect(position.pos1, position.Size, Color.Black.SetA(100))
+		RendererSDK.TextByFlags(
+			Menu.Localization.Localize("NetWorth_Drag"),
+			position,
+			Color.White,
+			division
 		)
 	}
 
@@ -162,5 +238,37 @@ export class PlayerGUI {
 
 	private serializeNetWorth(netWorth: number) {
 		return netWorth.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1 ")
+	}
+	private updateMinMaxPanelPosition(position: Vector2) {
+		const wSize = RendererSDK.WindowSize
+		const totalSize = this.TotalPosition.Size
+		const newPosition = position
+			.Min(wSize.Subtract(totalSize))
+			.Max(0)
+			.CopyTo(position)
+		this.saveNewPosition(newPosition)
+	}
+
+	private updateScaleSize() {
+		const minSize = 20
+		const sizeMenu = this.menu.Size.value
+		const size = Math.min(Math.max(sizeMenu + minSize, minSize), minSize * 2)
+		this.scaleUnitImageSize.y = this.scaleGradientSize.y = GUIInfo.ScaleHeight(size)
+
+		this.scaleGradientSize.x = GUIInfo.ScaleWidth(size * 3)
+		this.scaleUnitImageSize.x = GUIInfo.ScaleWidth(size * 1.6)
+	}
+
+	private updateScalePosition() {
+		const menuPosition = this.menu.Position
+		const valueX = Math.max(GUIInfo.ScaleWidth(menuPosition.X.value), 0)
+		this.scalePositionPanel.x = valueX
+		const valueY = Math.max(GUIInfo.ScaleHeight(menuPosition.Y.value), 0)
+		this.scalePositionPanel.y = valueY
+	}
+
+	private saveNewPosition(newPosition?: Vector2) {
+		const position = newPosition ?? this.scalePositionPanel
+		this.menu.Position.Vector = position.RoundForThis(1)
 	}
 }

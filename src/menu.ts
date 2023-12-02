@@ -1,29 +1,19 @@
-import {
-	Color,
-	GUIInfo,
-	Menu,
-	NotificationsSDK,
-	ResetSettingsUpdated,
-	Sleeper,
-	Vector2
-} from "github.com/octarine-public/wrapper/index"
+import { Color, Menu, Vector2 } from "github.com/octarine-public/wrapper/index"
 
 export class TotalNetWorthMenu {
 	public readonly State: Menu.Toggle
 	public readonly Difference: Menu.Toggle
 	public readonly TextColor: Menu.ColorPicker
 
-	protected readonly Menu: Menu.Node
-
 	constructor(tree: Menu.Node) {
-		this.Menu = tree.AddNode(
+		const menu = tree.AddNode(
 			"Between teams",
 			"panorama/images/hud/reborn/graph_icon_psd.vtex_c"
 		)
-		this.Menu.SortNodes = false
-		this.State = this.Menu.AddToggle("State", true)
-		this.Difference = this.Menu.AddToggle("Show only difference", true)
-		this.TextColor = this.Menu.AddColorPicker("Text color", new Color(242, 195, 30))
+		menu.SortNodes = false
+		this.State = menu.AddToggle("State", true)
+		this.Difference = menu.AddToggle("Show only difference", true)
+		this.TextColor = menu.AddColorPicker("Text color", new Color(242, 195, 30))
 	}
 
 	public ResetSettings() {
@@ -33,100 +23,67 @@ export class TotalNetWorthMenu {
 }
 
 export class MenuManager {
+	public IsToggled = true
+	public readonly Reset: Menu.Button
 	public readonly State: Menu.Toggle
 	public readonly Ally: Menu.Toggle
 	public readonly Enemy: Menu.Toggle
 	public readonly Local: Menu.Toggle
 
+	public readonly ModeKey: Menu.Dropdown
+	public readonly ToggleKey: Menu.KeyBind
+
+	public readonly Size: Menu.Slider
 	public readonly Total: TotalNetWorthMenu
-	public readonly SettingsPosition: {
+
+	public readonly Position: {
 		readonly node: Menu.Node
 		readonly X: Menu.Slider
 		readonly Y: Menu.Slider
 		Vector: Vector2
 	}
 
-	protected readonly Menu: Menu.Node
-	protected readonly Entries: Menu.Node
-
-	protected readonly SettingsTree: Menu.Node
-	protected readonly SettingsSize: Menu.Slider
-
-	private readonly sleeper = new Sleeper()
-
 	constructor() {
-		this.Entries = Menu.AddEntry("Visual")
-
-		this.Menu = this.Entries.AddNode(
+		const entries = Menu.AddEntry("Visual")
+		const menu = entries.AddNode(
 			"Net worth",
 			"panorama/images/hud/reborn/graph_icon_psd.vtex_c"
 		)
+		menu.SortNodes = false
 
-		this.Menu.SortNodes = false
-		this.State = this.Menu.AddToggle("State", true)
-
-		this.Ally = this.Menu.AddToggle("Allies", true)
-		this.Enemy = this.Menu.AddToggle("Enemies", true)
-		this.Local = this.Menu.AddToggle("You net worth", true, "Show your own net worth")
+		this.State = menu.AddToggle("State", true)
+		this.Ally = menu.AddToggle("Allies", true)
+		this.Enemy = menu.AddToggle("Enemies", true)
+		this.Local = menu.AddToggle("You net worth", true, "Show your own net worth")
 		this.Local.IsHidden = true
 
-		this.SettingsTree = this.Menu.AddNode(
+		const settingsTree = menu.AddNode("Settings heroes", "menu/icons/settings.svg")
+		settingsTree.SortNodes = false
+
+		this.ToggleKey = settingsTree.AddKeybind("Key", "", "Key bind turn on/off panel")
+		this.ModeKey = settingsTree.AddDropdown("Key mode", ["Hold key", "Toggled"], 1)
+		this.Size = settingsTree.AddSlider("Size", 0, 0, 20)
+
+		this.Position = menu.AddVector2(
 			"Settings heroes",
-			"menu/icons/settings.svg"
-		)
-		this.SettingsSize = this.SettingsTree.AddSlider("Size", 18, 18, 60)
-		this.SettingsPosition = this.Menu.AddVector2(
-			"Settings heroes",
-			new Vector2(7, 309),
+			new Vector2(0, 355),
 			new Vector2(0, 0),
 			new Vector2(1920, 1080)
 		)
 
-		this.Total = new TotalNetWorthMenu(this.Menu)
+		this.Total = new TotalNetWorthMenu(menu)
+		this.Reset = menu.AddButton("Reset", "Reset settings")
 
 		this.Ally.OnValue(call => (this.Local.IsHidden = !call.value))
-
-		this.Menu.AddButton("Reset", "Reset settings").OnValue(() => {
-			if (this.sleeper.Sleeping("ResetSettings")) {
-				return
-			}
-			this.ResetSettings()
-			this.sleeper.Sleep(1000, "ResetSettings")
-			NotificationsSDK.Push(new ResetSettingsUpdated())
-		})
+		this.ToggleKey.OnRelease(() => (this.IsToggled = !this.IsToggled))
 	}
 
-	public get PlayerSize() {
-		return new Vector2(
-			GUIInfo.ScaleWidth(this.SettingsSize.value * 1.5),
-			GUIInfo.ScaleHeight(this.SettingsSize.value)
-		)
-	}
-
-	public get Size() {
-		return GUIInfo.ScaleHeight(this.SettingsSize.value * 0.7)
-	}
-
-	public get LineSize() {
-		return new Vector2(
-			GUIInfo.ScaleWidth(this.SettingsSize.value * 5.5),
-			GUIInfo.ScaleHeight(this.SettingsSize.value)
-		)
-	}
-
-	public get GetPanelPos(): Vector2 {
-		return new Vector2(
-			GUIInfo.ScaleWidth(this.SettingsPosition.Vector.x),
-			GUIInfo.ScaleHeight(this.SettingsPosition.Vector.y)
-		)
-	}
-
-	protected ResetSettings() {
+	public ResetSettings() {
 		this.Total.ResetSettings()
-		this.SettingsSize.value = 18
+		this.Size.value = 0
 		this.Local.IsHidden = false
-		this.SettingsPosition.X.value = 7
-		this.SettingsPosition.Y.value = 309
+		this.Position.X.value = 0
+		this.Position.Y.value = 355
 		this.State.value = this.Ally.value = true
 		this.Local.value = this.Enemy.value = true
 	}

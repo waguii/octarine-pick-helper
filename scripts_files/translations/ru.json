@@ -13,5 +13,10 @@
 	"You net worth": "Ваш нетворс",
 	"Net worth": "Общая ценность",
 	"Show your own net worth": "Показывать собственный нетворс",
-	"Show only difference": "Показать только разницу"
+	"Show only difference": "Показать только разницу",
+	"Key mode": "Режим бинда",
+	"Hold key": "Удерживать",
+	"Toggled": "Переключать",
+	"Key bind turn on/off panel": "Клавиша бинда\nна включение и выключение панели",
+	"NetWorth_Drag": "< Перенести >"
 }
