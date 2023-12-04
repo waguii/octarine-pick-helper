@@ -1,4 +1,4 @@
-import { Color, Menu, Vector2 } from "github.com/octarine-public/wrapper/index"
+import { Color, ImageData, Menu, Vector2 } from "github.com/octarine-public/wrapper/index"
 
 export class TotalNetWorthMenu {
 	public readonly State: Menu.Toggle
@@ -32,6 +32,7 @@ export class MenuManager {
 
 	public readonly ModeKey: Menu.Dropdown
 	public readonly ToggleKey: Menu.KeyBind
+	public readonly TouchKeyPanel: Menu.KeyBind
 
 	public readonly Size: Menu.Slider
 	public readonly Total: TotalNetWorthMenu
@@ -57,13 +58,25 @@ export class MenuManager {
 		this.Local = menu.AddToggle("You net worth", true, "Show your own net worth")
 		this.Local.IsHidden = true
 
+		const treeBinds = menu.AddNode("Binds", ImageData.Paths.Icons.icon_svg_keyboard)
+		treeBinds.SortNodes = false
+		this.ToggleKey = treeBinds.AddKeybind("Key", "", "Key turn on/off panel")
+		this.TouchKeyPanel = treeBinds.AddKeybind(
+			"Touch panel",
+			"Ctrl",
+			"The button captures the panel\nfor dragging on the screen.\nIf the button is not set, the panel can only\nbe dragged using the mouse"
+		)
+		this.ModeKey = treeBinds.AddDropdown(
+			"Key mode",
+			["Hold key", "Toggled"],
+			1,
+			"Key mode turn on/off panel"
+		)
+
 		const settingsTree = menu.AddNode("Settings heroes", "menu/icons/settings.svg")
 		settingsTree.SortNodes = false
 
-		this.ToggleKey = settingsTree.AddKeybind("Key", "", "Key bind turn on/off panel")
-		this.ModeKey = settingsTree.AddDropdown("Key mode", ["Hold key", "Toggled"], 1)
 		this.Size = settingsTree.AddSlider("Size", 0, 0, 20)
-
 		this.Position = menu.AddVector2(
 			"Settings heroes",
 			new Vector2(0, 355),
@@ -73,7 +86,6 @@ export class MenuManager {
 
 		this.Total = new TotalNetWorthMenu(menu)
 		this.Reset = menu.AddButton("Reset", "Reset settings")
-
 		this.Ally.OnValue(call => (this.Local.IsHidden = !call.value))
 		this.ToggleKey.OnRelease(() => (this.IsToggled = !this.IsToggled))
 	}
@@ -86,5 +98,10 @@ export class MenuManager {
 		this.Position.Y.value = 355
 		this.State.value = this.Ally.value = true
 		this.Local.value = this.Enemy.value = true
+		this.TouchKeyPanel.assignedKey = 17
+		this.TouchKeyPanel.assignedKeyStr = "Ctrl"
+		this.ToggleKey.assignedKey = -1
+		this.ToggleKey.assignedKeyStr = "None"
+		this.ModeKey.SelectedID = 1
 	}
 }
