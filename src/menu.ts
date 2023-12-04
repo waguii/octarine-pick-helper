@@ -29,6 +29,7 @@ export class MenuManager {
 	public readonly Ally: Menu.Toggle
 	public readonly Enemy: Menu.Toggle
 	public readonly Local: Menu.Toggle
+	public readonly Opacity: Menu.Slider
 
 	public readonly ModeKey: Menu.Dropdown
 	public readonly ToggleKey: Menu.KeyBind
@@ -77,6 +78,7 @@ export class MenuManager {
 		settingsTree.SortNodes = false
 
 		this.Size = settingsTree.AddSlider("Size", 0, 0, 20)
+		this.Opacity = settingsTree.AddSlider("Opacity", 0, 0, 70)
 		this.Position = menu.AddVector2(
 			"Settings heroes",
 			new Vector2(0, 355),
@@ -93,6 +95,7 @@ export class MenuManager {
 	public ResetSettings() {
 		this.Total.ResetSettings()
 		this.Size.value = 0
+		this.Opacity.value = 0
 		this.Local.IsHidden = false
 		this.Position.X.value = 0
 		this.Position.Y.value = 355

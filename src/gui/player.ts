@@ -64,33 +64,34 @@ export class PlayerGUI {
 		let count = 0
 		const heroName = player.HeroName ?? ""
 		const texturePath = ImageData.GetHeroTexture(heroName)
+		const opacity = Math.round((1 - menu.Opacity.value / 100) * 255)
 
 		const imageRect = position.Clone()
-		this.FieldRect(imageRect, Color.Black, dragging)
+		this.FieldRect(imageRect, Color.Black.SetA(opacity), dragging)
 		imageRect.x += gap / 2
 		imageRect.y += gap / 2
 		imageRect.Width -= gap
 		imageRect.Height -= gap
-		this.Image(texturePath, imageRect, Color.White, dragging)
+		this.Image(texturePath, imageRect, Color.White.SetA(opacity), dragging)
 
 		// player image border left
 		const leftBorder = imageRect.Clone()
 		leftBorder.Width = GUIInfo.ScaleWidth(gap)
-		this.FieldRect(leftBorder, player.Color, dragging)
+		this.FieldRect(leftBorder, player.Color.Clone().SetA(opacity), dragging)
 
 		// player gradient border right
 		const gPosition = position.Clone()
 		gPosition.x += position.Width
 		gPosition.Width = this.scaleGradientSize.x
 		gPosition.Height = this.scaleGradientSize.y
-		this.Gradient(gPosition, isEnemy, player.Team, dragging)
+		this.Gradient(gPosition, isEnemy, player.Team, opacity, dragging)
 
 		this.isUnderRectangle =
 			position.Contains(Input.CursorOnScreen) ||
 			gPosition.Contains(Input.CursorOnScreen) ||
 			gPosition.Contains(Input.CursorOnScreen)
 
-		this.Text(gPosition, player) // NOTE: not cloned gPosition
+		this.Text(gPosition, player, opacity) // NOTE: not cloned gPosition
 
 		count++
 		enabledPlayers.push(count)
@@ -170,14 +171,21 @@ export class PlayerGUI {
 		this.saveNewPosition()
 	}
 
-	protected Text(position: Rectangle, player: PlayerCustomData) {
+	protected Text(position: Rectangle, player: PlayerCustomData, opacity: number) {
 		// NOTE: since it is the last element, position.Clone() is ignored for optimization
 		const text = this.isUnderRectangle
 			? this.serializePlayerName(player)
 			: this.serializeNetWorth(player.NetWorth)
 		position.x += position.Height / 6
 		const flags = TextFlags.Center | TextFlags.Left
-		RendererSDK.TextByFlags(text, position, Color.White, 1.6, flags, 400)
+		RendererSDK.TextByFlags(
+			text,
+			position,
+			Color.White.SetA(opacity + 20),
+			1.6,
+			flags,
+			400
+		)
 	}
 
 	protected Image(
@@ -214,17 +222,19 @@ export class PlayerGUI {
 		position: Rectangle,
 		isEnemy = false,
 		team: Team,
+		opacity: number,
 		grayscale?: boolean
 	) {
+		opacity = Math.min(opacity, 200)
 		const localTeam = GameState.LocalTeam
 		const gradientColor =
 			localTeam === Team.Observer
 				? team === Team.Dire
-					? Color.Red.SetA(200)
-					: Color.Green.SetA(200)
+					? Color.Red.SetA(opacity)
+					: Color.Green.SetA(opacity)
 				: isEnemy
-				? Color.Red.SetA(200)
-				: Color.Green.SetA(200)
+				? Color.Red.SetA(opacity)
+				: Color.Green.SetA(opacity)
 		this.Image(
 			`${this.path}/networth_gradient.svg`,
 			position,
@@ -253,6 +263,7 @@ export class PlayerGUI {
 	private serializeNetWorth(netWorth: number) {
 		return netWorth.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1 ")
 	}
+
 	private updateMinMaxPanelPosition(position: Vector2) {
 		const wSize = RendererSDK.WindowSize
 		const totalSize = this.TotalPosition.Size
