@@ -123,15 +123,6 @@ export class PlayerGUI {
 		}
 		this.dragging = false
 		Menu.Base.SaveConfigASAP = true
-		const position = this.scalePositionPanel
-		const wSize = RendererSDK.WindowSize
-		const mousePos = Input.CursorOnScreen
-		const toPosition = mousePos
-			.SubtractForThis(this.draggingOffset)
-			.Min(wSize.Subtract(this.TotalPosition.Size))
-			.Max(0)
-			.CopyTo(position)
-		this.saveNewPosition(toPosition)
 		return true
 	}
 

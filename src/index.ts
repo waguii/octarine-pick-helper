@@ -131,7 +131,6 @@ const bootstrap = new (class CBootstrap {
 
 		for (let index = orderByPlayers.length - 1; index > -1; index--) {
 			const player = orderByPlayers[index]
-
 			// for Team GUI
 			switch (player.Team) {
 				case Team.Dire:
@@ -141,11 +140,9 @@ const bootstrap = new (class CBootstrap {
 					radiant += player.NetWorth
 					break
 			}
-
 			if (player.IsAbandoned || player.IsDisconnected) {
 				continue
 			}
-
 			if (this.canDrawPlayerGUI) {
 				this.playerGUI.Draw(player, enabledPlayers, position)
 			}
