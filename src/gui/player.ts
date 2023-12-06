@@ -91,7 +91,7 @@ export class PlayerGUI {
 			gPosition.Contains(Input.CursorOnScreen) ||
 			gPosition.Contains(Input.CursorOnScreen)
 
-		this.Text(gPosition, player, opacity) // NOTE: not cloned gPosition
+		this.Text(gPosition, player, opacity)
 
 		count++
 		enabledPlayers.push(count)
@@ -154,24 +154,23 @@ export class PlayerGUI {
 		this.dragging = false
 		this.isUnderRectangle = false
 		this.draggingOffset.toZero()
+		this.restartScale()
 	}
 
 	public ResetSettings() {
-		this.updateScaleSize()
-		this.updateScalePosition()
-		this.saveNewPosition()
+		this.restartScale()
 	}
 
 	protected Text(position: Rectangle, player: PlayerCustomData, opacity: number) {
-		// NOTE: since it is the last element, position.Clone() is ignored for optimization
+		const newPosition = position.Clone()
 		const text = this.isUnderRectangle
 			? this.serializePlayerName(player)
 			: this.serializeNetWorth(player.NetWorth)
-		position.x += position.Height / 6
+		newPosition.x += position.Height / 6
 		const flags = TextFlags.Center | TextFlags.Left
 		RendererSDK.TextByFlags(
 			text,
-			position,
+			newPosition,
 			Color.White.SetA(opacity + 20),
 			1.6,
 			flags,
@@ -285,6 +284,16 @@ export class PlayerGUI {
 
 	private saveNewPosition(newPosition?: Vector2) {
 		const position = newPosition ?? this.scalePositionPanel
-		this.menu.Position.Vector = position.RoundForThis(1)
+		this.menu.Position.Vector = position
+			.Clone()
+			.DivideScalarX(GUIInfo.GetWidthScale())
+			.DivideScalarY(GUIInfo.GetHeightScale())
+			.RoundForThis(1)
+	}
+
+	private restartScale() {
+		this.updateScaleSize()
+		this.updateScalePosition()
+		this.saveNewPosition()
 	}
 }
