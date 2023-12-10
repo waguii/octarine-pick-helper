@@ -1,4 +1,10 @@
-import { Color, ImageData, Menu, Vector2 } from "github.com/octarine-public/wrapper/index"
+import {
+	Color,
+	ImageData,
+	Menu,
+	Vector2,
+	VKeys
+} from "github.com/octarine-public/wrapper/index"
 
 export class TotalNetWorthMenu {
 	public readonly State: Menu.Toggle
@@ -17,8 +23,9 @@ export class TotalNetWorthMenu {
 	}
 
 	public ResetSettings() {
-		this.State.value = this.Difference.value = true
-		this.TextColor.SelectedColor.CopyFrom(new Color(242, 195, 30))
+		this.State.value = this.State.defaultValue
+		this.Difference.value = this.Difference.defaultValue
+		this.TextColor.SelectedColor.CopyFrom(this.TextColor.defaultColor)
 	}
 }
 
@@ -61,7 +68,7 @@ export class MenuManager {
 
 		const treeBinds = menu.AddNode("Binds", ImageData.Paths.Icons.icon_svg_keyboard)
 		treeBinds.SortNodes = false
-		this.ToggleKey = treeBinds.AddKeybind("Key", "", "Key turn on/off panel")
+		this.ToggleKey = treeBinds.AddKeybind("Key", "None", "Key turn on/off panel")
 		this.TouchKeyPanel = treeBinds.AddKeybind(
 			"Touch panel",
 			"Ctrl",
@@ -81,7 +88,7 @@ export class MenuManager {
 		this.Opacity = settingsTree.AddSlider("Opacity", 0, 0, 70)
 		this.Position = menu.AddVector2(
 			"Settings heroes",
-			new Vector2(0, 355),
+			new Vector2(0, 309),
 			new Vector2(0, 0),
 			new Vector2(1920, 1080)
 		)
@@ -94,17 +101,19 @@ export class MenuManager {
 
 	public ResetSettings() {
 		this.Total.ResetSettings()
-		this.Size.value = 0
-		this.Opacity.value = 0
 		this.Local.IsHidden = false
-		this.Position.X.value = 0
-		this.Position.Y.value = 355
-		this.State.value = this.Ally.value = true
-		this.Local.value = this.Enemy.value = true
-		this.TouchKeyPanel.assignedKey = 17
-		this.TouchKeyPanel.assignedKeyStr = "Ctrl"
+		this.Size.value = this.Size.defaultValue
+		this.Opacity.value = this.Opacity.defaultValue
+		this.Position.X.value = this.Position.X.defaultValue
+		this.Position.Y.value = this.Position.Y.defaultValue
+		this.State.value = this.State.defaultValue
+		this.Ally.value = this.Ally.defaultValue
+		this.Local.value = this.Local.defaultValue
+		this.Enemy.value = this.Enemy.defaultValue
+		this.TouchKeyPanel.assignedKey = VKeys.CONTROL
+		this.TouchKeyPanel.assignedKeyStr = this.TouchKeyPanel.defaultKey
 		this.ToggleKey.assignedKey = -1
-		this.ToggleKey.assignedKeyStr = "None"
-		this.ModeKey.SelectedID = 1
+		this.ToggleKey.assignedKeyStr = this.ToggleKey.defaultKey
+		this.ModeKey.SelectedID = this.ModeKey.defaultValue
 	}
 }
