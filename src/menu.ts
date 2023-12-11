@@ -61,9 +61,9 @@ export class MenuManager {
 		menu.SortNodes = false
 
 		this.State = menu.AddToggle("State", true)
-		this.Ally = menu.AddToggle("Allies", true)
-		this.Enemy = menu.AddToggle("Enemies", true)
-		this.Local = menu.AddToggle("You net worth", true, "Show your own net worth")
+		this.Ally = menu.AddToggle("Allies", false)
+		this.Enemy = menu.AddToggle("Enemies", false)
+		this.Local = menu.AddToggle("You net worth", false, "Show your own net worth")
 		this.Local.IsHidden = true
 
 		const treeBinds = menu.AddNode("Binds", ImageData.Paths.Icons.icon_svg_keyboard)
