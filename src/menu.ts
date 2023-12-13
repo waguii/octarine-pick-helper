@@ -101,7 +101,6 @@ export class MenuManager {
 
 	public ResetSettings() {
 		this.Total.ResetSettings()
-		this.Local.IsHidden = false
 		this.Size.value = this.Size.defaultValue
 		this.Opacity.value = this.Opacity.defaultValue
 		this.Position.X.value = this.Position.X.defaultValue
@@ -115,5 +114,6 @@ export class MenuManager {
 		this.ToggleKey.assignedKey = -1
 		this.ToggleKey.assignedKeyStr = this.ToggleKey.defaultKey
 		this.ModeKey.SelectedID = this.ModeKey.defaultValue
+		this.Local.IsHidden = !this.Ally.value
 	}
 }
