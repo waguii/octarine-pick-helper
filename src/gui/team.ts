@@ -114,7 +114,12 @@ export class TeamGUI {
 			position.pos1,
 			-1,
 			position.Size,
-			this.BgColor
+			this.BgColor,
+			0,
+			undefined,
+			false,
+			new Vector2(),
+			RendererSDK.GetImageSize(ImageData.Paths.Icons.chat_preview_opacity_mask)
 		)
 	}
 

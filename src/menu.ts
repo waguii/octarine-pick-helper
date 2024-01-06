@@ -5,6 +5,7 @@ import {
 	Vector2,
 	VKeys
 } from "github.com/octarine-public/wrapper/index"
+import { Paths } from "github.com/octarine-public/wrapper/wrapper/Data/ImageData"
 
 export class TotalNetWorthMenu {
 	public readonly State: Menu.Toggle
@@ -12,10 +13,7 @@ export class TotalNetWorthMenu {
 	public readonly TextColor: Menu.ColorPicker
 
 	constructor(tree: Menu.Node) {
-		const menu = tree.AddNode(
-			"Between teams",
-			"panorama/images/hud/reborn/graph_icon_psd.vtex_c"
-		)
+		const menu = tree.AddNode("Between teams", `${Paths.Icons.chat_arrow_down}`)
 		menu.SortNodes = false
 		this.State = menu.AddToggle("State", true)
 		this.Difference = menu.AddToggle("Show only difference", true)
@@ -54,16 +52,13 @@ export class MenuManager {
 
 	constructor() {
 		const entries = Menu.AddEntry("Visual")
-		const menu = entries.AddNode(
-			"Net worth",
-			"panorama/images/hud/reborn/graph_icon_psd.vtex_c"
-		)
+		const menu = entries.AddNode("Net worth", `${Paths.Icons.chat_arrow_grow}`)
 		menu.SortNodes = false
 
 		this.State = menu.AddToggle("State", true)
 		this.Ally = menu.AddToggle("Allies", false)
 		this.Enemy = menu.AddToggle("Enemies", false)
-		this.Local = menu.AddToggle("You net worth", false, "Show your own net worth")
+		this.Local = menu.AddToggle("Your net worth", false, "Show your own net worth")
 		this.Local.IsHidden = true
 
 		const treeBinds = menu.AddNode("Binds", ImageData.Paths.Icons.icon_svg_keyboard)
