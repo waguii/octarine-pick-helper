@@ -6,6 +6,7 @@
 		"moduleResolution": "Node",
 		"rootDir": "../../../",
 		"baseUrl": "../../../",
+		// "outDir": "scripts",
 		"noEmit": true,
 		"noUnusedLocals": true,
 		"strict": true,
@@ -21,7 +22,6 @@
 		"../../**/*.d.ts"
 	],
 	"exclude": [
-		"wrapper_autogen/**/*",
 		"node_modules/**/*",
 		"scripts_files/**/*",
 	]

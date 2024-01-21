@@ -174,7 +174,11 @@ export class PlayerGUI {
 			Color.White.SetA(opacity + 20),
 			1.6,
 			flags,
-			400
+			500,
+			RendererSDK.DefaultFontName,
+			true,
+			false,
+			false
 		)
 	}
 
@@ -241,7 +245,13 @@ export class PlayerGUI {
 			Menu.Localization.Localize("NetWorth_Drag"),
 			position,
 			Color.White,
-			division
+			division,
+			TextFlags.Center,
+			400,
+			RendererSDK.DefaultFontName,
+			true,
+			false,
+			false
 		)
 	}
 
