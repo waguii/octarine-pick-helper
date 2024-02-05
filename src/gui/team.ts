@@ -6,8 +6,8 @@ import {
 	Rectangle,
 	RendererSDK,
 	Team,
-	Vector2,
-	Vector3
+	TextFlags,
+	Vector2
 } from "github.com/octarine-public/wrapper/index"
 
 import { TotalNetWorthMenu } from "../menu"
@@ -57,54 +57,51 @@ export class TeamGUI {
 	}
 
 	private renderComponent(
-		position: Rectangle,
+		rec: Rectangle,
 		team = Team.Radiant,
 		textColor: Color,
 		sum?: number
 	) {
-		this.renderBackground(position)
-		const cPosition = position.Clone()
-		const fontName = RendererSDK.DefaultFontName
+		this.renderBackground(rec)
+		const position = rec.Clone()
 
-		const textSize = GUIInfo.ScaleHeight(11)
+		const iconSize = GUIInfo.ScaleVector(12, 12)
 		const text = this.calcSummToStr(this.serializeSum(team, sum))
-		const getTextSize = RendererSDK.GetTextSize(text, fontName, textSize, 600)
+		const textPosition = RendererSDK.TextByFlags(
+			text,
+			position,
+			textColor,
+			2,
+			TextFlags.Center,
+			600
+		)
 
-		const calcPosition = cPosition.x + cPosition.Size.x / 2
-		const centerPosition = new Vector2(calcPosition, cPosition.y)
-
-		const textPosition = centerPosition
-			.Clone()
-			.AddScalarY(3)
-			.SubtractScalarX(getTextSize.x / 2)
-
-		RendererSDK.Text(text, textPosition, textColor, fontName, textSize, 600)
-
-		const size = GUIInfo.ScaleWidth(12)
-		const iconSize = new Vector2(size, size)
-		this.renderGoldIcon(textPosition, getTextSize, iconSize)
-		this.renderDiffIcon(textPosition, getTextSize, iconSize, team)
+		this.renderDiffIcon(textPosition, team)
+		this.renderGoldIcon(textPosition, iconSize)
 	}
 
-	private renderDiffIcon(
-		position: Vector2,
-		textSize: Vector3,
-		iconSize: Vector2,
-		team: Team
-	) {
+	private renderDiffIcon(rec: Rectangle, team: Team) {
+		const position = rec.Clone()
 		const localTeam = GameState.LocalTeam
+		const indentation = GUIInfo.ScaleWidth(1)
+		const iconSize = GUIInfo.ScaleVector(8, 8)
+
+		position.pos1
+			.AddScalarY(indentation + iconSize.y / 4)
+			.SubtractScalarX(indentation + iconSize.x)
+
 		const imageTeam =
 			localTeam === team || localTeam === Team.Observer
 				? ImageData.Paths.Icons.arrow_gold_dif
 				: ImageData.Paths.Icons.arrow_plus_stats_red
 
-		const iconPosition = position.SubtractScalarX(textSize.x + iconSize.x + 1)
-		RendererSDK.Image(imageTeam, iconPosition, -1, iconSize, Color.White)
+		RendererSDK.Image(imageTeam, position.pos1, -1, iconSize, Color.White)
 	}
 
-	private renderGoldIcon(position: Vector2, textSize: Vector3, iconSize: Vector2) {
+	private renderGoldIcon(rec: Rectangle, iconSize: Vector2) {
 		const image = ImageData.Paths.Icons.gold_large
-		const iconPosition = position.AddScalarX(textSize.x).AddScalarY(iconSize.y / 8)
+		const position = rec.Clone()
+		const iconPosition = position.pos1.AddScalarX(position.pos2.x)
 		RendererSDK.Image(image, iconPosition, -1, iconSize, Color.White)
 	}
 
@@ -140,22 +137,14 @@ export class TeamGUI {
 			(moduleSum === 0
 				? minTotal
 				: moduleSum > 30
-				? "<" + minTotal
-				: ">" + minTotal) + "k"
+					? "<" + minTotal
+					: ">" + minTotal) + "k"
 		)
 	}
 
 	private getPosition(team?: Team) {
-		const absPosition =
-			(team ?? this.Team) === Team.Dire
-				? GUIInfo.TopBar.DireSpectatorGoldDisplay.Clone()
-				: GUIInfo.TopBar.RadiantSpectatorGoldDisplay.Clone()
-
-		// any team?
-		if ((team ?? this.Team) === Team.Dire || (team ?? this.Team) === Team.Radiant) {
-			absPosition.AddX(1) // [+] 2px
-		}
-
-		return absPosition
+		return (team ?? this.Team) === Team.Dire
+			? GUIInfo.TopBar.DireSpectatorGoldDisplay.Clone()
+			: GUIInfo.TopBar.RadiantSpectatorGoldDisplay.Clone()
 	}
 }
