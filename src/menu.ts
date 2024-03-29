@@ -35,6 +35,7 @@ export class MenuManager {
 	public readonly Enemy: Menu.Toggle
 	public readonly Local: Menu.Toggle
 	public readonly Opacity: Menu.Slider
+	public readonly OnlyItems: Menu.Toggle
 
 	public readonly ModeKey: Menu.Dropdown
 	public readonly ToggleKey: Menu.KeyBind
@@ -58,10 +59,11 @@ export class MenuManager {
 		this.State = menu.AddToggle("State", true)
 		this.Ally = menu.AddToggle("Allies", false)
 		this.Enemy = menu.AddToggle("Enemies", false)
+		this.OnlyItems = menu.AddToggle("Only items", true, "Calculate only by items")
 		this.Local = menu.AddToggle("Your net worth", false, "Show your own net worth")
 		this.Local.IsHidden = true
 
-		const treeBinds = menu.AddNode("Binds", ImageData.Paths.Icons.icon_svg_keyboard)
+		const treeBinds = menu.AddNode("Hotkeys", ImageData.Paths.Icons.icon_svg_keyboard)
 		treeBinds.SortNodes = false
 		this.ToggleKey = treeBinds.AddKeybind("Key", "None", "Key turn on/off panel")
 		this.TouchKeyPanel = treeBinds.AddKeybind(

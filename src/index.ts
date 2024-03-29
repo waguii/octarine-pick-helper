@@ -9,6 +9,7 @@ import {
 	GUIInfo,
 	Input,
 	InputEventSDK,
+	Item,
 	NotificationsSDK,
 	PlayerCustomData,
 	Rectangle,
@@ -125,26 +126,33 @@ const bootstrap = new (class CBootstrap {
 		let radiant = 0
 		const position = new Rectangle()
 		const enabledPlayers: number[] = []
-		const orderByPlayers = this.players.orderBy(x => x.NetWorth)
+
+		const orderByPlayers = this.players.orderBy(x => this.calculateByItem(x))
 
 		this.playerGUI.UpdateSetPosition(position)
 
 		for (let index = orderByPlayers.length - 1; index > -1; index--) {
-			const player = orderByPlayers[index]
+			const player = orderByPlayers[index],
+				itemCosts = this.calculateByItem(player)
 			// for Team GUI
 			switch (player.Team) {
 				case Team.Dire:
-					dire += player.NetWorth
+					dire += itemCosts
 					break
 				case Team.Radiant:
-					radiant += player.NetWorth
+					radiant += itemCosts
 					break
 			}
 			if (player.IsAbandoned || player.IsDisconnected) {
 				continue
 			}
 			if (this.canDrawPlayerGUI) {
-				this.playerGUI.Draw(player, enabledPlayers, position)
+				this.playerGUI.Draw(
+					player,
+					enabledPlayers,
+					position,
+					this.menu.OnlyItems.value ? itemCosts : undefined
+				)
 			}
 		}
 
@@ -215,6 +223,15 @@ const bootstrap = new (class CBootstrap {
 		this.playerGUI.ResetSettings()
 		this.sleeper.Sleep(1000, "ResetSettings")
 		NotificationsSDK.Push(new ResetSettingsUpdated())
+	}
+
+	private calculateByItem(player: PlayerCustomData) {
+		if (player.Hero === undefined || !this.menu.OnlyItems.value) {
+			return player.NetWorth
+		}
+		return (
+			player.Hero.TotalItems.filter(x => x !== undefined && x.Cost !== 0) as Item[]
+		).reduce((prev, curr) => prev + curr.Cost, 0)
 	}
 })()
 

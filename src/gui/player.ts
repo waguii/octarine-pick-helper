@@ -46,7 +46,12 @@ export class PlayerGUI {
 		this.TotalPosition.pos2.CopyFrom(position.pos2)
 	}
 
-	public Draw(player: PlayerCustomData, enabledPlayers: number[], position: Rectangle) {
+	public Draw(
+		player: PlayerCustomData,
+		enabledPlayers: number[],
+		position: Rectangle,
+		netWorthByItem?: number
+	) {
 		const gap = 2
 		const menu = this.menu
 		const ally = menu.Ally.value
@@ -91,7 +96,7 @@ export class PlayerGUI {
 			gPosition.Contains(Input.CursorOnScreen) ||
 			gPosition.Contains(Input.CursorOnScreen)
 
-		this.Text(gPosition, player, opacity)
+		this.Text(gPosition, player, opacity, netWorthByItem)
 
 		count++
 		enabledPlayers.push(count)
@@ -161,11 +166,16 @@ export class PlayerGUI {
 		this.restartScale()
 	}
 
-	protected Text(position: Rectangle, player: PlayerCustomData, opacity: number) {
+	protected Text(
+		position: Rectangle,
+		player: PlayerCustomData,
+		opacity: number,
+		netWorthByItem?: number
+	) {
 		const newPosition = position.Clone()
 		const text = this.isUnderRectangle
 			? this.serializePlayerName(player)
-			: this.serializeNetWorth(player.NetWorth)
+			: this.serializeNetWorth(netWorthByItem ?? player.NetWorth)
 		newPosition.x += position.Height / 6
 		const flags = TextFlags.Center | TextFlags.Left
 		RendererSDK.TextByFlags(
@@ -227,8 +237,8 @@ export class PlayerGUI {
 					? Color.Red.SetA(opacity)
 					: Color.Green.SetA(opacity)
 				: isEnemy
-				? Color.Red.SetA(opacity)
-				: Color.Green.SetA(opacity)
+					? Color.Red.SetA(opacity)
+					: Color.Green.SetA(opacity)
 		this.Image(
 			`${this.path}/networth_gradient.svg`,
 			position,
