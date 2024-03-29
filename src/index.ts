@@ -3,6 +3,7 @@ import "./translations"
 import {
 	DOTAGameState,
 	DOTAGameUIState,
+	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
@@ -15,7 +16,9 @@ import {
 	Rectangle,
 	ResetSettingsUpdated,
 	Sleeper,
+	SpiritBear,
 	Team,
+	Unit,
 	VMouseKeys
 } from "github.com/octarine-public/wrapper/index"
 
@@ -30,6 +33,7 @@ const bootstrap = new (class CBootstrap {
 	private readonly playerGUI: PlayerGUI
 	private readonly teamGUI = new TeamGUI()
 	private readonly players: PlayerCustomData[] = []
+	private readonly spiritBears: SpiritBear[] = []
 
 	constructor() {
 		this.playerGUI = new PlayerGUI(this.menu)
@@ -168,6 +172,53 @@ const bootstrap = new (class CBootstrap {
 		this.teamGUI.Draw(this.menu.Total, radiant, dire)
 	}
 
+	public EntityCreated(entity: Entity) {
+		if (!(entity instanceof SpiritBear)) {
+			return
+		}
+		if (this.isShouldSpiritBear(entity)) {
+			this.spiritBears.push(entity)
+		}
+	}
+
+	public EntityDestroyed(entity: Entity) {
+		if (entity instanceof SpiritBear) {
+			this.spiritBears.remove(entity)
+		}
+	}
+
+	public UnitItemsChanged(entity: Unit) {
+		if (!(entity instanceof SpiritBear)) {
+			return
+		}
+		if (!entity.IsValid) {
+			this.spiritBears.remove(entity)
+			return
+		}
+		if (this.isShouldSpiritBear(entity)) {
+			this.spiritBears.push(entity)
+		}
+	}
+
+	public UnitPropertyChanged(entity: Unit) {
+		if (!(entity instanceof SpiritBear)) {
+			return
+		}
+		if (!entity.IsValid || this.isIllusionSpiritBear(entity)) {
+			this.spiritBears.remove(entity)
+			return
+		}
+		if (this.isShouldSpiritBear(entity)) {
+			this.spiritBears.push(entity)
+		}
+	}
+
+	public LifeStateChanged(entity: Entity) {
+		if (entity instanceof SpiritBear && !entity.IsAlive) {
+			this.spiritBears.remove(entity)
+		}
+	}
+
 	public PlayerCustomDataUpdated(entity: PlayerCustomData) {
 		if (!entity.IsValid || entity.IsSpectator) {
 			this.players.remove(entity)
@@ -215,6 +266,18 @@ const bootstrap = new (class CBootstrap {
 		return position.Contains(this.playerGUI.TotalPosition.pos1)
 	}
 
+	private isShouldSpiritBear(spiritBear: SpiritBear) {
+		return (
+			spiritBear.ShouldRespawn &&
+			!this.spiritBears.includes(spiritBear) &&
+			!this.isIllusionSpiritBear(spiritBear)
+		)
+	}
+
+	private isIllusionSpiritBear(spiritBear: SpiritBear) {
+		return spiritBear.IsIllusion || spiritBear.HasBuffByName("modifier_illusion")
+	}
+
 	private resetSettings() {
 		if (this.sleeper.Sleeping("ResetSettings")) {
 			return
@@ -229,9 +292,13 @@ const bootstrap = new (class CBootstrap {
 		if (player.Hero === undefined || !this.menu.OnlyItems.value) {
 			return player.NetWorth
 		}
-		return (
-			player.Hero.TotalItems.filter(x => x !== undefined && x.Cost !== 0) as Item[]
-		).reduce((prev, curr) => prev + curr.Cost, 0)
+		const bearItems =
+			this.spiritBears.find(
+				x => !this.isIllusionSpiritBear(x) && x.PlayerID === player.PlayerID
+			)?.TotalItems ?? []
+		return ([...player.Hero.TotalItems, ...bearItems] as Item[])
+			.filter(x => x !== undefined && x.Cost !== 0)
+			.reduce((prev, curr) => prev + curr.Cost, 0)
 	}
 })()
 
@@ -240,6 +307,16 @@ EventsSDK.on("Draw", () => bootstrap.Draw())
 EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
 
 EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
+
+EventsSDK.on("EntityCreated", entity => bootstrap.EntityCreated(entity))
+
+EventsSDK.on("LifeStateChanged", entity => bootstrap.LifeStateChanged(entity))
+
+EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityDestroyed(entity))
+
+EventsSDK.on("UnitItemsChanged", unit => bootstrap.UnitItemsChanged(unit))
+
+EventsSDK.on("UnitPropertyChanged", unit => bootstrap.UnitPropertyChanged(unit))
 
 InputEventSDK.on("MouseKeyUp", key => bootstrap.MouseKeyUp(key))
 
