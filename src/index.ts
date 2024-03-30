@@ -131,13 +131,13 @@ const bootstrap = new (class CBootstrap {
 		const position = new Rectangle()
 		const enabledPlayers: number[] = []
 
-		const orderByPlayers = this.players.orderBy(x => this.calculateByItem(x))
+		const orderByPlayers = this.players.orderBy(x => this.calculateByItems(x))
 
 		this.playerGUI.UpdateSetPosition(position)
 
 		for (let index = orderByPlayers.length - 1; index > -1; index--) {
 			const player = orderByPlayers[index],
-				itemCosts = this.calculateByItem(player)
+				itemCosts = this.calculateByItems(player)
 			// for Team GUI
 			switch (player.Team) {
 				case Team.Dire:
@@ -288,17 +288,23 @@ const bootstrap = new (class CBootstrap {
 		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
 
-	private calculateByItem(player: PlayerCustomData) {
+	private calculateByItems(player: PlayerCustomData) {
 		if (player.Hero === undefined || !this.menu.OnlyItems.value) {
 			return player.NetWorth
 		}
-		const bearItems =
-			this.spiritBears.find(
-				x => !this.isIllusionSpiritBear(x) && x.PlayerID === player.PlayerID
-			)?.TotalItems ?? []
-		return ([...player.Hero.TotalItems, ...bearItems] as Item[])
-			.filter(x => x !== undefined && x.Cost !== 0)
-			.reduce((prev, curr) => prev + curr.Cost, 0)
+		let heroItemsTotalCost = this.getTotalCostOfItems(player.Hero.TotalItems)
+		const spiritBearByPlayerID = this.spiritBears.find(
+			bear => bear.PlayerID === player.PlayerID && !this.isIllusionSpiritBear(bear)
+		)
+		if (spiritBearByPlayerID !== undefined) {
+			heroItemsTotalCost += this.getTotalCostOfItems(
+				spiritBearByPlayerID.TotalItems
+			)
+		}
+		return heroItemsTotalCost
+	}
+	private getTotalCostOfItems(items: Nullable<Item>[]): number {
+		return items.reduce((totalCost, item) => totalCost + (item?.Cost ?? 0), 0)
 	}
 })()
 
