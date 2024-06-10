@@ -3,22 +3,18 @@ import "./translations"
 import {
 	DOTAGameState,
 	DOTAGameUIState,
-	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
 	GUIInfo,
 	Input,
 	InputEventSDK,
-	Item,
 	NotificationsSDK,
 	PlayerCustomData,
 	Rectangle,
 	ResetSettingsUpdated,
 	Sleeper,
-	SpiritBear,
 	Team,
-	Unit,
 	VMouseKeys
 } from "github.com/octarine-public/wrapper/index"
 
@@ -33,7 +29,6 @@ const bootstrap = new (class CBootstrap {
 	private readonly playerGUI: PlayerGUI
 	private readonly teamGUI = new TeamGUI()
 	private readonly players: PlayerCustomData[] = []
-	private readonly spiritBears: SpiritBear[] = []
 
 	constructor() {
 		this.playerGUI = new PlayerGUI(this.menu)
@@ -131,13 +126,13 @@ const bootstrap = new (class CBootstrap {
 		const position = new Rectangle()
 		const enabledPlayers: number[] = []
 
-		const orderByPlayers = this.players.orderBy(x => this.calculateByItems(x))
+		const orderByPlayers = this.players.orderBy(x => this.calculateBy(x))
 
 		this.playerGUI.UpdateSetPosition(position)
 
 		for (let index = orderByPlayers.length - 1; index > -1; index--) {
 			const player = orderByPlayers[index],
-				itemCosts = this.calculateByItems(player)
+				itemCosts = this.calculateBy(player)
 			// for Team GUI
 			switch (player.Team) {
 				case Team.Dire:
@@ -170,53 +165,6 @@ const bootstrap = new (class CBootstrap {
 		}
 
 		this.teamGUI.Draw(this.menu.Total, radiant, dire)
-	}
-
-	public EntityCreated(entity: Entity) {
-		if (!(entity instanceof SpiritBear)) {
-			return
-		}
-		if (this.isShouldSpiritBear(entity)) {
-			this.spiritBears.push(entity)
-		}
-	}
-
-	public EntityDestroyed(entity: Entity) {
-		if (entity instanceof SpiritBear) {
-			this.spiritBears.remove(entity)
-		}
-	}
-
-	public UnitItemsChanged(entity: Unit) {
-		if (!(entity instanceof SpiritBear)) {
-			return
-		}
-		if (!entity.IsValid) {
-			this.spiritBears.remove(entity)
-			return
-		}
-		if (this.isShouldSpiritBear(entity)) {
-			this.spiritBears.push(entity)
-		}
-	}
-
-	public UnitPropertyChanged(entity: Unit) {
-		if (!(entity instanceof SpiritBear)) {
-			return
-		}
-		if (!entity.IsValid || this.isIllusionSpiritBear(entity)) {
-			this.spiritBears.remove(entity)
-			return
-		}
-		if (this.isShouldSpiritBear(entity)) {
-			this.spiritBears.push(entity)
-		}
-	}
-
-	public LifeStateChanged(entity: Entity) {
-		if (entity instanceof SpiritBear && !entity.IsAlive) {
-			this.spiritBears.remove(entity)
-		}
 	}
 
 	public PlayerCustomDataUpdated(entity: PlayerCustomData) {
@@ -266,18 +214,6 @@ const bootstrap = new (class CBootstrap {
 		return position.Contains(this.playerGUI.TotalPosition.pos1)
 	}
 
-	private isShouldSpiritBear(spiritBear: SpiritBear) {
-		return (
-			spiritBear.ShouldRespawn &&
-			!this.spiritBears.includes(spiritBear) &&
-			!this.isIllusionSpiritBear(spiritBear)
-		)
-	}
-
-	private isIllusionSpiritBear(spiritBear: SpiritBear) {
-		return spiritBear.IsIllusion || spiritBear.HasBuffByName("modifier_illusion")
-	}
-
 	private resetSettings() {
 		if (this.sleeper.Sleeping("ResetSettings")) {
 			return
@@ -288,23 +224,10 @@ const bootstrap = new (class CBootstrap {
 		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
 
-	private calculateByItems(player: PlayerCustomData) {
-		if (player.Hero === undefined || !this.menu.OnlyItems.value) {
-			return player.NetWorth
-		}
-		let heroItemsTotalCost = this.getTotalCostOfItems(player.Hero.TotalItems)
-		const spiritBearByPlayerID = this.spiritBears.find(
-			bear => bear.PlayerID === player.PlayerID && !this.isIllusionSpiritBear(bear)
-		)
-		if (spiritBearByPlayerID !== undefined) {
-			heroItemsTotalCost += this.getTotalCostOfItems(
-				spiritBearByPlayerID.TotalItems
-			)
-		}
-		return heroItemsTotalCost
-	}
-	private getTotalCostOfItems(items: Nullable<Item>[]): number {
-		return items.reduce((totalCost, item) => totalCost + (item?.Cost ?? 0), 0)
+	private calculateBy(player: PlayerCustomData) {
+		return player.Hero === undefined || !this.menu.OnlyItems.value
+			? player.NetWorth
+			: player.ItemsGold
 	}
 })()
 
@@ -313,16 +236,6 @@ EventsSDK.on("Draw", () => bootstrap.Draw())
 EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
 
 EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
-
-EventsSDK.on("EntityCreated", entity => bootstrap.EntityCreated(entity))
-
-EventsSDK.on("LifeStateChanged", entity => bootstrap.LifeStateChanged(entity))
-
-EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityDestroyed(entity))
-
-EventsSDK.on("UnitItemsChanged", unit => bootstrap.UnitItemsChanged(unit))
-
-EventsSDK.on("UnitPropertyChanged", unit => bootstrap.UnitPropertyChanged(unit))
 
 InputEventSDK.on("MouseKeyUp", key => bootstrap.MouseKeyUp(key))
 
