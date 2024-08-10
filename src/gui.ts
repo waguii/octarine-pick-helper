@@ -100,7 +100,7 @@ export class GUIHelper {
 		const headerHeight = 30
 
 		// Heroes Banned
-		const heroesBannedPos = basePos.Clone().AddY(headerHeight)
+		const heroesBannedPos = basePos.Clone()
 		RendererSDK.TextByFlags(
 			"HEROES BANNED",
 			heroesBannedPos,
