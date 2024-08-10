@@ -123,7 +123,7 @@ export class GUIHelper {
 			radiantPos,
 			Color.White.SetA(255),
 			3,
-			TextFlags.Center | TextFlags.Left
+			TextFlags.Center | TextFlags.Top
 		)
 		RendererSDK.Image(
 			this.header,
@@ -133,16 +133,13 @@ export class GUIHelper {
 			Color.White.SetA(100)
 		)
 
-		const direPos = basePos
-			.Clone()
-			.AddY(headerHeight * 3)
-			.AddX(150) // Assuming 150 pixels between columns
+		const direPos = basePos.Clone().AddY(headerHeight * 3)
 		RendererSDK.TextByFlags(
 			"DIRE HEROES",
 			direPos,
 			Color.White.SetA(255),
 			3,
-			TextFlags.Center | TextFlags.Left
+			TextFlags.Center | TextFlags.Top
 		)
 		RendererSDK.Image(
 			this.header,
