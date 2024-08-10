@@ -50,7 +50,7 @@ export class MenuManager {
 			this.IsToggled = !this.IsToggled
 		})
 
-		console.log("MenuManager created")
+		SendToConsole("MenuManager created")
 	}
 
 	public ResetSettings() {
