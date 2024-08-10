@@ -99,9 +99,10 @@ export class GUIHelper {
 		const basePos = this.position.Clone()
 		const playerCount = 5
 		for (let i = 0; i < playerCount; i++) {
+			const pos = basePos.Clone().AddY(30 * i)
 			RendererSDK.TextByFlags(
 				"Player " + i,
-				basePos.Clone().AddY(30 * i),
+				pos,
 				Color.White.SetA(255),
 				3,
 				TextFlags.Center | TextFlags.Left
