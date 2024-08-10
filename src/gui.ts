@@ -78,7 +78,7 @@ export class GUIHelper {
 		if (!menu.State) {
 			return
 		}
-
+		SendToConsole("echo MenuManager created")
 		const vecPosition = this.UpdateScale(menu)
 		const alpha = (Math.max(menu.Opacity.value, this.dragging ? 100 : 50) / 100) * 255
 
