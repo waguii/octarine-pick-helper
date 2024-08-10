@@ -116,7 +116,7 @@ export class GUIHelper {
 			basePos.pos1,
 			-1,
 			endPos.Size,
-			Color.White.SetA(alpha)
+			Color.White.SetA(100)
 		)
 	}
 
