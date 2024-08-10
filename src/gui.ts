@@ -6,11 +6,11 @@ import {
 	GameState,
 	GUIInfo,
 	ImageData,
+	Input,
 	LaneSelection,
 	Menu,
 	Rectangle,
 	RendererSDK,
-	Team,
 	TextFlags,
 	Vector2
 } from "github.com/octarine-public/wrapper/index"
@@ -18,17 +18,19 @@ import {
 import { MenuManager } from "./menu"
 
 export class GUIHelper {
+	private dragging = false
+
+	private readonly vecSize = new Vector2()
+	private readonly vecPosition = new Vector2()
+	private readonly draggingOffset = new Vector2()
+
 	private readonly inGameColor = new Color(0xcf, 0xcf, 0xcf)
 	private readonly inSelectionColor = new Color(0xaa, 0xaa, 0xaa)
+
+	private readonly recIcon = new Rectangle()
 	private readonly position = new Rectangle()
 
-	private readonly roleLocalizationNames = [
-		"DOTA_TopBar_LaneSelectionSafelane",
-		"DOTA_TopBar_LaneSelectionOfflane",
-		"DOTA_TopBar_LaneSelectionMidlane",
-		"DOTA_TopBar_LaneSelectionSupport",
-		"DOTA_TopBar_LaneSelectionHardSupport"
-	]
+	private readonly imageHeader = ImageData.GetRankTexture(LaneSelection.SUPPORT)
 
 	public get IsReady() {
 		return GUIInfo !== undefined && GUIInfo.TopBar !== undefined
@@ -74,117 +76,124 @@ export class GUIHelper {
 		if (!menu.State) {
 			return
 		}
+
+		const vecPosition = this.UpdateScale(menu)
+		const alpha = (Math.max(menu.Opacity.value, this.dragging ? 100 : 50) / 100) * 255
+
+		// background
+		RendererSDK.Image(
+			this.imageHeader,
+			this.position.pos1,
+			-1,
+			this.position.Size,
+			Color.White.SetA(alpha)
+		)
+
+		this.DrawInformation(alpha)
+		this.UpdatePosition(menu, vecPosition)
+	}
+
+	protected DrawInformation(alpha: number) {
+		// left icon
+		RendererSDK.Image(
+			this.imageHeader,
+			this.recIcon.pos1,
+			-1,
+			this.recIcon.Size,
+			Color.White.SetA(alpha)
+		)
+
 		const basePos = this.position.Clone()
-		const startPos = basePos.AddX(10)
 		const flags = TextFlags.Center | TextFlags.Left
+
+		const indentationX = 4
+		const startPos = basePos.AddX((this.recIcon.Width + indentationX) * (88 / 64))
+
 		const trackerPos = RendererSDK.TextByFlags(
 			"TESTE",
 			startPos,
-			Color.White.SetA(255),
+			Color.White.SetA(alpha),
 			3,
 			flags
 		)
-
-		// if (this.isShowCase) {
-		// 	return
-		// }
-		// const laneSelections = player.LaneSelections
-		// const rolePosition = this.getPosition(player.Team, player.TeamSlot)?.Clone()
-		// if (rolePosition === undefined) {
-		// 	return
-		// }
-		// const size = rolePosition.Height
-		// const roleImageSize = new Vector2(size, size)
-		// if (this.isPreGame) {
-		// 	const length = laneSelections.length / 10
-		// 	const count = 2 - length
-		// 	rolePosition.Height *= count
-		// 	roleImageSize.MultiplyScalarForThis(count)
-		// }
-		// if (laneSelections.length === 1) {
-		// 	this.drawTextForRole(rolePosition, laneSelections[0])
-		// 	return
-		// }
-		// // render multiple tier icons from center
-		// const xPosition = rolePosition.x + rolePosition.Size.x / 2
-		// for (let index = laneSelections.length - 1; index > -1; index--) {
-		// 	const lane = laneSelections[index]
-		// 	const iconTier = ImageData.GetRankTexture(lane)
-		// 	const position = new Vector2(xPosition, rolePosition.y + 1)
-		// 		.AddScalarX(index * roleImageSize.x)
-		// 		.SubtractScalarX((roleImageSize.x * laneSelections.length) / 2)
-		// 	RendererSDK.Image(iconTier, position, -1, roleImageSize, this.color)
-		// }
 	}
 
-	private getPosition(team: Team, slotId: number): Nullable<Rectangle> {
-		if (this.isSelection) {
-			return team === Team.Dire
-				? GUIInfo.PreGame.DirePlayersRoles[slotId]
-				: GUIInfo.PreGame.RadiantPlayersRoles[slotId]
+	public MouseKeyUp() {
+		if (!this.dragging) {
+			return true
 		}
-		return team === Team.Dire
-			? GUIInfo.TopBar.DirePlayersManabars[slotId]
-			: GUIInfo.TopBar.RadiantPlayersManabars[slotId]
+		this.dragging = false
+		Menu.Base.SaveConfigASAP = true
+		return false
 	}
 
-	private getRoleName(role: LaneSelection) {
-		return Menu.Localization.Localize(this.roleLocalizationNames[role] ?? "No role")
+	public MouseKeyDown() {
+		if (this.dragging) {
+			return true
+		}
+		const pos = this.position
+		const mouse = Input.CursorOnScreen
+		if (!mouse.IsUnderRectangle(pos.x, pos.y, pos.Width, pos.Height)) {
+			return true
+		}
+		this.dragging = true
+		mouse.Subtract(pos.pos1).CopyTo(this.draggingOffset)
+		return false
 	}
 
-	private drawTextForRole(position: Rectangle, lane: LaneSelection) {
-		if (!this.isPreGame) {
-			this.drawInHeroSelection(position, lane)
+	protected UpdateScale(menu: MenuManager) {
+		const panelSize = GUIInfo.ScaleVector(250, 35)
+		this.vecSize.CopyFrom(panelSize)
+
+		const menuPos = menu.Position
+		const panelPosition = GUIInfo.ScaleVector(menuPos.X.value, menuPos.Y.value)
+		this.vecPosition.CopyFrom(panelPosition)
+
+		this.position.pos1.CopyFrom(panelPosition)
+		this.position.pos2.CopyFrom(panelPosition.Add(panelSize))
+
+		const iconSize = GUIInfo.ScaleVector(24, 24)
+		this.recIcon.pos1.CopyFrom(panelPosition)
+		this.recIcon.pos2.CopyFrom(panelPosition.Add(iconSize))
+
+		this.recIcon.x += this.recIcon.Width / 4
+		this.recIcon.y += this.recIcon.Height / 4
+
+		return panelPosition
+	}
+
+	protected UpdatePosition(menu: MenuManager, position: Vector2) {
+		if (!this.dragging) {
+			// NOTE: update full panel if added new unit's or items
+			this.updateMinMaxPanelPosition(menu, position)
 			return
 		}
-
-		const division = 1.7
-		const roleName = this.getRoleName(lane)
-		if (roleName.length < 10) {
-			this.drawText(roleName, position, division, TextFlags.Top)
-			return
-		}
-
-		const names = roleName.split(" ")
-		const gapBetweenName = GUIInfo.ScaleHeight(13)
-
-		for (const newName of names) {
-			this.drawText(newName, position, division, TextFlags.Top)
-			position.AddY(gapBetweenName)
-		}
+		const wSize = RendererSDK.WindowSize
+		const mousePos = Input.CursorOnScreen
+		const toPosition = mousePos
+			.SubtractForThis(this.draggingOffset)
+			.Min(wSize.Subtract(this.position.Size))
+			.Max(0)
+			.CopyTo(position)
+		this.saveNewPosition(menu, toPosition)
 	}
 
-	private drawInHeroSelection(rolePosition: Rectangle, lane: LaneSelection) {
-		const size = GUIInfo.ScaleWidth(16)
-		const roleName = this.getRoleName(lane)
-		const iconTier = ImageData.GetRankTexture(lane)
-		const newPosition = rolePosition.Clone()
-		newPosition.pos1.AddScalarX(size / 2)
-		const textPosition = this.drawText(roleName, newPosition)
-		const imageSize = new Vector2(size, size)
-		const iconPosition = textPosition.pos1
-			.SubtractScalarY(2)
-			.SubtractScalarX(imageSize.x)
-		RendererSDK.Image(iconTier, iconPosition, -1, imageSize, this.color)
+	private updateMinMaxPanelPosition(menu: MenuManager, position: Vector2) {
+		const wSize = RendererSDK.WindowSize
+		const totalSize = this.position.Size
+		const newPosition = position
+			.Min(wSize.Subtract(totalSize))
+			.Max(0)
+			.CopyTo(position)
+		this.saveNewPosition(menu, newPosition)
 	}
 
-	private drawText(
-		text: string,
-		position: Rectangle,
-		divider = 1.4,
-		flags = TextFlags.Center
-	) {
-		return RendererSDK.TextByFlags(
-			text,
-			position,
-			this.color,
-			divider,
-			flags,
-			600,
-			RendererSDK.DefaultFontName,
-			false,
-			false,
-			false
-		)
+	private saveNewPosition(menu: MenuManager, newPosition?: Vector2) {
+		const position = newPosition ?? this.vecPosition
+		menu.Position.Vector = position
+			.Clone()
+			.DivideScalarX(GUIInfo.GetWidthScale())
+			.DivideScalarY(GUIInfo.GetHeightScale())
+			.RoundForThis(1)
 	}
 }
