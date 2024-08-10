@@ -95,20 +95,95 @@ export class GUIHelper {
 		this.UpdatePosition(menu, vecPosition)
 	}
 
+	// protected DrawDetails(alpha: number) {
+	// 	const basePos = this.position.Clone().AddY(30)
+	// 	const playerCount = 5
+	// 	for (let i = 0; i < playerCount; i++) {
+	// 		const pos = basePos.Clone().AddY(30 * i)
+	// 		RendererSDK.TextByFlags(
+	// 			"Player " + i,
+	// 			pos,
+	// 			Color.White.SetA(255),
+	// 			3,
+	// 			TextFlags.Center | TextFlags.Left
+	// 		)
+	// 		RendererSDK.Image(this.header, pos.pos1, -1, pos.Size, Color.White.SetA(100))
+	// 	}
+	// }
+
 	protected DrawDetails(alpha: number) {
-		const basePos = this.position.Clone().AddY(30)
-		const playerCount = 5
-		for (let i = 0; i < playerCount; i++) {
-			const pos = basePos.Clone().AddY(30 * i)
-			RendererSDK.TextByFlags(
-				"Player " + i,
-				pos,
-				Color.White.SetA(255),
-				3,
-				TextFlags.Center | TextFlags.Left
-			)
-			RendererSDK.Image(this.header, pos.pos1, -1, pos.Size, Color.White.SetA(100))
-		}
+		const basePos = this.position.Clone()
+		const headerHeight = 30
+
+		// Pick Helper
+		const pickHelperPos = basePos.Clone().AddY(headerHeight)
+		RendererSDK.TextByFlags(
+			"Pick Helper",
+			pickHelperPos,
+			Color.White.SetA(255),
+			3,
+			TextFlags.Center | TextFlags.Top
+		)
+		RendererSDK.Image(
+			this.header,
+			pickHelperPos.pos1,
+			-1,
+			pickHelperPos.Size,
+			Color.White.SetA(100)
+		)
+
+		// Heroes Banned
+		const heroesBannedPos = basePos.Clone().AddY(headerHeight * 2)
+		RendererSDK.TextByFlags(
+			"HEROES BANNED",
+			heroesBannedPos,
+			Color.White.SetA(255),
+			3,
+			TextFlags.Center | TextFlags.Top
+		)
+		RendererSDK.Image(
+			this.header,
+			heroesBannedPos.pos1,
+			-1,
+			heroesBannedPos.Size,
+			Color.White.SetA(100)
+		)
+
+		// Radiant and Dire Heroes
+		const radiantPos = basePos.Clone().AddY(headerHeight * 3)
+		RendererSDK.TextByFlags(
+			"RADIANT HEROES",
+			radiantPos,
+			Color.White.SetA(255),
+			3,
+			TextFlags.Center | TextFlags.Left
+		)
+		RendererSDK.Image(
+			this.header,
+			radiantPos.pos1,
+			-1,
+			radiantPos.Size,
+			Color.White.SetA(100)
+		)
+
+		const direPos = basePos
+			.Clone()
+			.AddY(headerHeight * 3)
+			.AddX(150) // Assuming 150 pixels between columns
+		RendererSDK.TextByFlags(
+			"DIRE HEROES",
+			direPos,
+			Color.White.SetA(255),
+			3,
+			TextFlags.Center | TextFlags.Left
+		)
+		RendererSDK.Image(
+			this.header,
+			direPos.pos1,
+			-1,
+			direPos.Size,
+			Color.White.SetA(100)
+		)
 	}
 
 	protected DrawInformation(alpha: number) {
