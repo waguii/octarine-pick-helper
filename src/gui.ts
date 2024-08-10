@@ -29,6 +29,8 @@ export class GUIHelper {
 
 	private readonly recIcon = new Rectangle()
 	private readonly position = new Rectangle()
+	private readonly basePath = "github.com/octarine-public/mmr-tracker/scripts_files/"
+	private readonly header = this.basePath + "images/header.svg"
 
 	private readonly imageHeader = ImageData.GetRankTexture(LaneSelection.SUPPORT)
 
@@ -82,7 +84,7 @@ export class GUIHelper {
 
 		// background
 		RendererSDK.Image(
-			this.imageHeader,
+			this.header,
 			this.position.pos1,
 			-1,
 			this.position.Size,
