@@ -96,7 +96,7 @@ export class GUIHelper {
 	}
 
 	protected DrawDetails() {
-		const basePos = this.position.Clone()
+		const basePos = this.position.Clone().AddY(30)
 		const playerCount = 5
 		for (let i = 0; i < playerCount; i++) {
 			const pos = basePos.Clone().AddY(30 * i)
@@ -108,13 +108,13 @@ export class GUIHelper {
 				TextFlags.Center | TextFlags.Left
 			)
 		}
-		// RendererSDK.Image(
-		// 	this.header,
-		// 	basePos.pos1,
-		// 	-1,
-		// 	this.position.Size,
-		// 	Color.White.SetA(255)
-		// )
+		RendererSDK.Image(
+			this.header,
+			basePos.pos1,
+			-1,
+			this.position.Size,
+			Color.White.SetA(255)
+		)
 	}
 
 	protected DrawInformation(alpha: number) {
