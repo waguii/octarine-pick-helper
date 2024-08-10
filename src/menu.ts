@@ -4,7 +4,6 @@ import {
 	Menu,
 	Vector2
 } from "github.com/octarine-public/wrapper/index"
-import * as https from 'https';
 
 export class MenuManager {
 	public IsToggled = true
@@ -64,32 +63,5 @@ export class MenuManager {
 		this.IsToggled = true
 		this.ToggleKey.Update()
 		this.tree.Update()
-	}
-
-	public sendHttpRequest(url: string): Promise<any> {
-		return new Promise((resolve, reject) => {
-			https
-				.get(url, response => {
-					let data = ""
-
-					// A chunk of data has been received.
-					response.on("data", chunk => {
-						data += chunk
-					})
-
-					// The whole response has been received.
-					response.on("end", () => {
-						try {
-							const parsedData = JSON.parse(data)
-							resolve(parsedData)
-						} catch (error) {
-							reject(error)
-						}
-					})
-				})
-				.on("error", error => {
-					reject(error)
-				})
-		})
 	}
 }
