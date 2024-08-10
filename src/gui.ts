@@ -102,7 +102,7 @@ export class GUIHelper {
 		for (let i = 0; i < playerCount; i++) {
 			RendererSDK.TextByFlags(
 				"Player " + i,
-				new Rectangle(basePos.pos1, basePos.pos2.AddScalarY(20)),
+				new Rectangle(basePos.pos1, basePos.pos2.AddScalarY(50)),
 				Color.White.SetA(255),
 				3,
 				TextFlags.Center | TextFlags.Left
