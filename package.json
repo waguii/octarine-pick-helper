@@ -1,8 +1,8 @@
 {
 	"version": "1.0.0",
 	"main": "src/index.ts",
-	"name": "net-worth",
-	"description": "Net worth",
+	"name": "pick-helper",
+	"description": "Pick helper",
 	"license": "GPL-3.0-or-later",
 	"author": "SicdeX",
 	"devDependencies": {

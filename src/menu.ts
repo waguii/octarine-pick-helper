@@ -53,7 +53,7 @@ export class MenuManager {
 
 	constructor() {
 		const entries = Menu.AddEntry("Visual")
-		const menu = entries.AddNode("Net worth", `${Paths.Icons.chat_arrow_grow}`)
+		const menu = entries.AddNode("Pick Helper", `${Paths.Icons.chat_arrow_grow}`)
 		menu.SortNodes = false
 
 		this.State = menu.AddToggle("State", true)
