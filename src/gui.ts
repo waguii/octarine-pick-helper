@@ -95,28 +95,12 @@ export class GUIHelper {
 		this.UpdatePosition(menu, vecPosition)
 	}
 
-	// protected DrawDetails(alpha: number) {
-	// 	const basePos = this.position.Clone().AddY(30)
-	// 	const playerCount = 5
-	// 	for (let i = 0; i < playerCount; i++) {
-	// 		const pos = basePos.Clone().AddY(30 * i)
-	// 		RendererSDK.TextByFlags(
-	// 			"Player " + i,
-	// 			pos,
-	// 			Color.White.SetA(255),
-	// 			3,
-	// 			TextFlags.Center | TextFlags.Left
-	// 		)
-	// 		RendererSDK.Image(this.header, pos.pos1, -1, pos.Size, Color.White.SetA(100))
-	// 	}
-	// }
-
 	protected DrawDetails(alpha: number) {
 		const basePos = this.position.Clone()
 		const headerHeight = 30
 
 		// Heroes Banned
-		const heroesBannedPos = basePos.Clone().AddY(headerHeight * 2)
+		const heroesBannedPos = basePos.Clone().AddY(headerHeight)
 		RendererSDK.TextByFlags(
 			"HEROES BANNED",
 			heroesBannedPos,
