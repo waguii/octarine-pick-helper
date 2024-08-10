@@ -91,11 +91,11 @@ export class GUIHelper {
 		)
 
 		this.DrawInformation(alpha)
-		this.DrawDetails()
+		this.DrawDetails(alpha)
 		this.UpdatePosition(menu, vecPosition)
 	}
 
-	protected DrawDetails() {
+	protected DrawDetails(alpha: number) {
 		const basePos = this.position.Clone().AddY(30)
 		const playerCount = 5
 		for (let i = 0; i < playerCount; i++) {
@@ -108,12 +108,15 @@ export class GUIHelper {
 				TextFlags.Center | TextFlags.Left
 			)
 		}
+
+		const endPos = basePos.Clone().AddY(30 * 5)
+
 		RendererSDK.Image(
 			this.header,
 			basePos.pos1,
 			-1,
-			this.position.Size,
-			Color.White.SetA(255)
+			endPos.Size,
+			Color.White.SetA(alpha)
 		)
 	}
 
