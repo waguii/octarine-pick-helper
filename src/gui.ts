@@ -97,12 +97,11 @@ export class GUIHelper {
 
 	protected DrawDetails() {
 		const basePos = this.position.Clone()
-		const startPos = basePos.AddY(30)
 		const playerCount = 5
 		for (let i = 0; i < playerCount; i++) {
 			RendererSDK.TextByFlags(
 				"Player " + i,
-				new Rectangle(basePos.pos1, basePos.pos2.AddScalarY(50)),
+				basePos.Clone().AddY(30 * i),
 				Color.White.SetA(255),
 				3,
 				TextFlags.Center | TextFlags.Left
@@ -110,7 +109,7 @@ export class GUIHelper {
 		}
 		RendererSDK.Image(
 			this.header,
-			startPos.pos1,
+			basePos.pos1,
 			-1,
 			this.position.Size,
 			Color.White.SetA(255)
