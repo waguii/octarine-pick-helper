@@ -107,13 +107,7 @@ export class GUIHelper {
 				3,
 				TextFlags.Center | TextFlags.Left
 			)
-			RendererSDK.Image(
-				this.header,
-				basePos.pos1,
-				-1,
-				pos.Size,
-				Color.White.SetA(100)
-			)
+			RendererSDK.Image(this.header, pos.pos1, -1, pos.Size, Color.White.SetA(100))
 		}
 	}
 
