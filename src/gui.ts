@@ -78,7 +78,6 @@ export class GUIHelper {
 		if (!menu.State) {
 			return
 		}
-		SendToConsole("echo MenuManager created")
 		const vecPosition = this.UpdateScale(menu)
 		const alpha = (Math.max(menu.Opacity.value, this.dragging ? 100 : 50) / 100) * 255
 
@@ -92,7 +91,21 @@ export class GUIHelper {
 		)
 
 		this.DrawInformation(alpha)
+		this.DrawDetails()
 		this.UpdatePosition(menu, vecPosition)
+	}
+
+	protected DrawDetails() {
+		const basePos = this.position.Clone()
+		const startPos = basePos.AddY(30)
+
+		RendererSDK.Image(
+			this.header,
+			startPos.pos1,
+			-1,
+			this.position.Size,
+			Color.White.SetA(255)
+		)
 	}
 
 	protected DrawInformation(alpha: number) {
