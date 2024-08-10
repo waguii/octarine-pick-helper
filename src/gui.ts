@@ -102,7 +102,7 @@ export class GUIHelper {
 		for (let i = 0; i < playerCount; i++) {
 			RendererSDK.TextByFlags(
 				"Player " + i,
-				startPos.AddY(i * 30),
+				startPos.AddY(30),
 				Color.White.SetA(255),
 				3,
 				TextFlags.Center | TextFlags.Left
@@ -112,7 +112,7 @@ export class GUIHelper {
 			this.header,
 			startPos.pos1,
 			-1,
-			new Vector2(0, 100),
+			this.position.Size,
 			Color.White.SetA(255)
 		)
 	}
