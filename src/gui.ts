@@ -99,6 +99,22 @@ export class GUIHelper {
 		const basePos = this.position.Clone()
 		const headerHeight = 30
 
+		const bannedHeroes = [
+			"Lina",
+			"Pudge",
+			"Invoker",
+			"Drow Ranger",
+			"Phantom Assassin"
+		]
+		const radiantHeroes = ["Crystal Maiden", "Lion", "Lina", "Pudge", "Invoker"]
+		const direHeroes = [
+			"Anti-Mage",
+			"Luna",
+			"Juggernaut",
+			"Phantom Lancer",
+			"Terrorblade"
+		]
+
 		// Heroes Banned
 		const heroesBannedPos = basePos.Clone().AddY(headerHeight)
 		RendererSDK.TextByFlags(
@@ -116,10 +132,22 @@ export class GUIHelper {
 			Color.White.SetA(100)
 		)
 
-		// Radiant and Dire Heroes
-		const radiantPos = basePos.Clone().AddY(headerHeight * 2)
+		// List Banned Heroes
+		bannedHeroes.forEach((hero, index) => {
+			const pos = heroesBannedPos.Clone().AddY((index + 1) * headerHeight)
+			RendererSDK.TextByFlags(
+				hero,
+				pos,
+				Color.White.SetA(255),
+				3,
+				TextFlags.Center | TextFlags.Left
+			)
+		})
+
+		// Radiant Heroes
+		const radiantPos = basePos.Clone().AddY(headerHeight * (bannedHeroes.length + 2))
 		RendererSDK.TextByFlags(
-			"RADIANT HEROES",
+			"RADIANT",
 			radiantPos,
 			Color.White.SetA(255),
 			3,
@@ -133,9 +161,22 @@ export class GUIHelper {
 			Color.White.SetA(100)
 		)
 
-		const direPos = basePos.Clone().AddY(headerHeight * 3)
+		// List Radiant Heroes
+		radiantHeroes.forEach((hero, index) => {
+			const pos = radiantPos.Clone().AddY((index + 1) * headerHeight)
+			RendererSDK.TextByFlags(
+				hero,
+				pos,
+				Color.White.SetA(255),
+				3,
+				TextFlags.Center | TextFlags.Left
+			)
+		})
+
+		// Dire Heroes
+		const direPos = radiantPos.Clone().AddX(150) // Deslocamento em X para criar a coluna Dire
 		RendererSDK.TextByFlags(
-			"DIRE HEROES",
+			"DIRE",
 			direPos,
 			Color.White.SetA(255),
 			3,
@@ -148,6 +189,18 @@ export class GUIHelper {
 			direPos.Size,
 			Color.White.SetA(100)
 		)
+
+		// List Dire Heroes
+		direHeroes.forEach((hero, index) => {
+			const pos = direPos.Clone().AddY((index + 1) * headerHeight)
+			RendererSDK.TextByFlags(
+				hero,
+				pos,
+				Color.White.SetA(255),
+				3,
+				TextFlags.Center | TextFlags.Left
+			)
+		})
 	}
 
 	protected DrawInformation(alpha: number) {
