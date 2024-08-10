@@ -107,13 +107,13 @@ export class GUIHelper {
 				TextFlags.Center | TextFlags.Left
 			)
 		}
-		RendererSDK.Image(
-			this.header,
-			basePos.pos1,
-			-1,
-			this.position.Size,
-			Color.White.SetA(255)
-		)
+		// RendererSDK.Image(
+		// 	this.header,
+		// 	basePos.pos1,
+		// 	-1,
+		// 	this.position.Size,
+		// 	Color.White.SetA(255)
+		// )
 	}
 
 	protected DrawInformation(alpha: number) {
