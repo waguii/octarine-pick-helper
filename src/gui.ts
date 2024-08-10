@@ -8,7 +8,6 @@ import {
 	ImageData,
 	LaneSelection,
 	Menu,
-	PlayerCustomData,
 	Rectangle,
 	RendererSDK,
 	Team,
@@ -16,9 +15,12 @@ import {
 	Vector2
 } from "github.com/octarine-public/wrapper/index"
 
+import { MenuManager } from "./menu"
+
 export class GUIHelper {
 	private readonly inGameColor = new Color(0xcf, 0xcf, 0xcf)
 	private readonly inSelectionColor = new Color(0xaa, 0xaa, 0xaa)
+	private readonly position = new Rectangle()
 
 	private readonly roleLocalizationNames = [
 		"DOTA_TopBar_LaneSelectionSafelane",
@@ -68,42 +70,51 @@ export class GUIHelper {
 		)
 	}
 
-	public Draw(player: PlayerCustomData) {
-		if (this.isShowCase) {
+	public Draw(menu: MenuManager) {
+		if (!menu.State) {
 			return
 		}
+		const basePos = this.position.Clone()
+		const startPos = basePos.AddX(10)
+		const flags = TextFlags.Center | TextFlags.Left
+		const trackerPos = RendererSDK.TextByFlags(
+			"TESTE",
+			startPos,
+			Color.White.SetA(255),
+			3,
+			flags
+		)
 
-		const laneSelections = player.LaneSelections
-		const rolePosition = this.getPosition(player.Team, player.TeamSlot)?.Clone()
-		if (rolePosition === undefined) {
-			return
-		}
-
-		const size = rolePosition.Height
-		const roleImageSize = new Vector2(size, size)
-
-		if (this.isPreGame) {
-			const length = laneSelections.length / 10
-			const count = 2 - length
-			rolePosition.Height *= count
-			roleImageSize.MultiplyScalarForThis(count)
-		}
-
-		if (laneSelections.length === 1) {
-			this.drawTextForRole(rolePosition, laneSelections[0])
-			return
-		}
-
-		// render multiple tier icons from center
-		const xPosition = rolePosition.x + rolePosition.Size.x / 2
-		for (let index = laneSelections.length - 1; index > -1; index--) {
-			const lane = laneSelections[index]
-			const iconTier = ImageData.GetRankTexture(lane)
-			const position = new Vector2(xPosition, rolePosition.y + 1)
-				.AddScalarX(index * roleImageSize.x)
-				.SubtractScalarX((roleImageSize.x * laneSelections.length) / 2)
-			RendererSDK.Image(iconTier, position, -1, roleImageSize, this.color)
-		}
+		// if (this.isShowCase) {
+		// 	return
+		// }
+		// const laneSelections = player.LaneSelections
+		// const rolePosition = this.getPosition(player.Team, player.TeamSlot)?.Clone()
+		// if (rolePosition === undefined) {
+		// 	return
+		// }
+		// const size = rolePosition.Height
+		// const roleImageSize = new Vector2(size, size)
+		// if (this.isPreGame) {
+		// 	const length = laneSelections.length / 10
+		// 	const count = 2 - length
+		// 	rolePosition.Height *= count
+		// 	roleImageSize.MultiplyScalarForThis(count)
+		// }
+		// if (laneSelections.length === 1) {
+		// 	this.drawTextForRole(rolePosition, laneSelections[0])
+		// 	return
+		// }
+		// // render multiple tier icons from center
+		// const xPosition = rolePosition.x + rolePosition.Size.x / 2
+		// for (let index = laneSelections.length - 1; index > -1; index--) {
+		// 	const lane = laneSelections[index]
+		// 	const iconTier = ImageData.GetRankTexture(lane)
+		// 	const position = new Vector2(xPosition, rolePosition.y + 1)
+		// 		.AddScalarX(index * roleImageSize.x)
+		// 		.SubtractScalarX((roleImageSize.x * laneSelections.length) / 2)
+		// 	RendererSDK.Image(iconTier, position, -1, roleImageSize, this.color)
+		// }
 	}
 
 	private getPosition(team: Team, slotId: number): Nullable<Rectangle> {
