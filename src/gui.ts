@@ -115,23 +115,6 @@ export class GUIHelper {
 		const basePos = this.position.Clone()
 		const headerHeight = 30
 
-		// Pick Helper
-		const pickHelperPos = basePos.Clone().AddY(headerHeight)
-		RendererSDK.TextByFlags(
-			"Pick Helper",
-			pickHelperPos,
-			Color.White.SetA(255),
-			3,
-			TextFlags.Center | TextFlags.Top
-		)
-		RendererSDK.Image(
-			this.header,
-			pickHelperPos.pos1,
-			-1,
-			pickHelperPos.Size,
-			Color.White.SetA(100)
-		)
-
 		// Heroes Banned
 		const heroesBannedPos = basePos.Clone().AddY(headerHeight * 2)
 		RendererSDK.TextByFlags(
@@ -202,8 +185,8 @@ export class GUIHelper {
 		const indentationX = 4
 		const startPos = basePos.AddX((this.recIcon.Width + indentationX) * (88 / 64))
 
-		const trackerPos = RendererSDK.TextByFlags(
-			"TESTE",
+		RendererSDK.TextByFlags(
+			"Pick Helper",
 			startPos,
 			Color.White.SetA(alpha),
 			3,
@@ -235,7 +218,7 @@ export class GUIHelper {
 	}
 
 	protected UpdateScale(menu: MenuManager) {
-		const panelSize = GUIInfo.ScaleVector(250, 35)
+		const panelSize = GUIInfo.ScaleVector(500, 35)
 		this.vecSize.CopyFrom(panelSize)
 
 		const menuPos = menu.Position
