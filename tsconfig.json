@@ -16,6 +16,11 @@
 		"lib": [
 			"ESNext"
 		],
+		"paths": {
+			"github.com/octarine-public/wrapper/*": [
+				"/home/waguii/code/waguii/octarine/wrapper-master/*"
+			]
+		}
 	},
 	"include": [
 		"./**/*.ts",
