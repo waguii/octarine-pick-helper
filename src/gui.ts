@@ -107,17 +107,14 @@ export class GUIHelper {
 				3,
 				TextFlags.Center | TextFlags.Left
 			)
+			RendererSDK.Image(
+				this.header,
+				basePos.pos1,
+				-1,
+				pos.Size,
+				Color.White.SetA(100)
+			)
 		}
-
-		const endPos = basePos.Clone().AddY(30 * 5)
-
-		RendererSDK.Image(
-			this.header,
-			basePos.pos1,
-			-1,
-			endPos.Size,
-			Color.White.SetA(100)
-		)
 	}
 
 	protected DrawInformation(alpha: number) {
